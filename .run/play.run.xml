@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="play" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="io.github.glandais.rubikscube.Main" />
+    <module name="solitaire" />
+    <option name="PROGRAM_PARAMETERS" value="play" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="io.github.glandais.rubikscube.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
