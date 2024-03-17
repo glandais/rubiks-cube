@@ -15,7 +15,7 @@
 
         <lombok.version>1.18.30</lombok.version>
         <jansi.version>2.4.1</jansi.version>
-        <jackson-databind.version>2.16.1</jackson-databind.version>
+        <jackson-databind.version>2.17.0</jackson-databind.version>
         <picocli.version>4.7.5</picocli.version>
         <javafx.version>21.0.2</javafx.version>
         <caffeine.version>3.1.8</caffeine.version>
@@ -41,6 +41,11 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
             <version>${javafx.version}</version>
         </dependency>
         <dependency>
