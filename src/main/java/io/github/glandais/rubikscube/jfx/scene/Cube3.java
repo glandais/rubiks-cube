@@ -1,5 +1,7 @@
-package io.github.glandais.rubikscube.jfx;
+package io.github.glandais.rubikscube.jfx.scene;
 
+import io.github.glandais.rubikscube.model.FaceletEnum;
+import io.github.glandais.rubikscube.model.RotationEnum;
 import javafx.scene.Group;
 import lombok.Getter;
 
@@ -13,8 +15,9 @@ public class Cube3 extends Group {
 
     private static final boolean SHOW_AXES = false;
 
+    private List<RotationEnum> rotations;
     private List<Cube> cubes;
-    private Map<Facelet3DEnum, Facelet> facelets;
+    private Map<FaceletEnum, Facelet> facelets;
 
     public Cube3() {
         super();
@@ -23,7 +26,8 @@ public class Cube3 extends Group {
 
     public void reset() {
         cubes = new ArrayList<>();
-        this.facelets = new EnumMap<>(Facelet3DEnum.class);
+        rotations = new ArrayList<>();
+        this.facelets = new EnumMap<>(FaceletEnum.class);
         getChildren().clear();
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
@@ -31,7 +35,7 @@ public class Cube3 extends Group {
                     Cube cube = new Cube(i, j, k);
                     cubes.add(cube);
                     for (Facelet realFace : cube.getRealFaces()) {
-                        facelets.put(realFace.getFacelet3DEnum(), realFace);
+                        facelets.put(realFace.getInitialPosition(), realFace);
                     }
                 }
             }
@@ -56,5 +60,9 @@ public class Cube3 extends Group {
                     return z != null && z.equals(c.getZ());
                 })
                 .toList();
+    }
+
+    public void rotate(RotationEnum rotation) {
+        rotations.add(rotation);
     }
 }

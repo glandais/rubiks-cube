@@ -1,20 +1,23 @@
 package io.github.glandais.rubikscube.model;
 
-import io.github.glandais.rubikscube.jfx.RubiksCubeInteract;
+import io.github.glandais.rubikscube.jfx.scene.Cube3;
+import io.github.glandais.rubikscube.jfx.scene.Facelet;
+import io.github.glandais.rubikscube.jfx.scene.Facelet3DEnum;
+import io.github.glandais.rubikscube.jfx.scene.RotationModel;
+import io.github.glandais.rubikscube.jfx.scene.RotationPlayModel;
 
 public class RotationMovesGenerator {
 
     public static void main(String[] args) {
-        RubiksCubeInteract rubiksCubeInteract = new RubiksCubeInteract();
         System.out.println("    public static final byte[][] NEW_POSITIONS = {");
         for (RotationEnum rotationEnum : RotationEnum.values()) {
-            getRotationMoves(rubiksCubeInteract, rotationEnum);
+            getRotationMoves(rotationEnum);
         }
         System.out.println("    };");
     }
 
-    private static void getRotationMoves(RubiksCubeInteract rubiksCubeInteract, RotationEnum rotation) {
-        byte[] moves = rubiksCubeInteract.getMoves(rotation);
+    private static void getRotationMoves(RotationEnum rotation) {
+        byte[] moves = getMoves(rotation);
         StringBuilder s = new StringBuilder("\n\t\t\t\t\t");
         for (int i = 0; i < moves.length; i++) {
             FaceletEnum current = FaceletEnum.values()[i];
@@ -36,6 +39,18 @@ public class RotationMovesGenerator {
         }
         System.out.println("        // " + rotation.getNotation() + " (" + rotation.name() + ")");
         System.out.println("                {" + s + "},");
+    }
+
+    private static byte[] getMoves(RotationEnum rotation) {
+        Cube3 cube3 = new Cube3();
+        RotationModel rotationModel = new RotationPlayModel(cube3, rotation, -1);
+        rotationModel.applyRotation();
+        byte[] newPositions = new byte[48];
+        for (Facelet facelet : cube3.getFacelets().values()) {
+            Facelet3DEnum newPosition = Facelet3DEnum.of(facelet.getCurrentPosition3D());
+            newPositions[facelet.getInitialPosition().ordinal()] = (byte) newPosition.ordinal();
+        }
+        return newPositions;
     }
 
 }

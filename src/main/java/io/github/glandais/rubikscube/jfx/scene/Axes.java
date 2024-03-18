@@ -1,10 +1,9 @@
-package io.github.glandais.rubikscube.jfx;
+package io.github.glandais.rubikscube.jfx.scene;
 
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
-import javafx.scene.shape.Cylinder;
 import javafx.scene.shape.Sphere;
 
 import java.util.List;

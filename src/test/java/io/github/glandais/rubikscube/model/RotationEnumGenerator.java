@@ -1,6 +1,8 @@
 package io.github.glandais.rubikscube.model;
 
-import static io.github.glandais.rubikscube.model.AxisEnum.*;
+import static io.github.glandais.rubikscube.model.AxisEnum.X;
+import static io.github.glandais.rubikscube.model.AxisEnum.Y;
+import static io.github.glandais.rubikscube.model.AxisEnum.Z;
 
 public class RotationEnumGenerator {
 

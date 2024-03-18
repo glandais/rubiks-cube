@@ -1,13 +1,8 @@
 package io.github.glandais.rubikscube.model;
 
 import cs.min2phase.Search;
-import cs.min2phase.SearchWCA;
 import cs.min2phase.Tools;
 import org.worldcubeassociation.tnoodle.puzzle.ThreeByThreeCubeFewestMovesPuzzle;
-import org.worldcubeassociation.tnoodle.scrambles.PuzzleStateAndGenerator;
-
-import java.security.SecureRandom;
-import java.util.Random;
 
 public class Scramble {
 

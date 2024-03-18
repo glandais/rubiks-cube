@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="play" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="io.github.glandais.rubikscube.Main" />
-    <module name="solitaire" />
+    <module name="rubiks-cube" />
     <option name="PROGRAM_PARAMETERS" value="play" />
     <extension name="coverage">
       <pattern>

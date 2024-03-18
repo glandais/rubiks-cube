@@ -6,10 +6,10 @@ import org.fusesource.jansi.Ansi;
 
 @Getter
 public enum SideEnum {
-    F(Color.BLUE, Color.BLUE, Ansi.Color.BLUE),
-    B(Color.GREEN, Color.GREEN, Ansi.Color.GREEN),
-    U(Color.YELLOW, Color.YELLOW, Ansi.Color.YELLOW),
-    D(Color.WHITE, Color.WHITE, Ansi.Color.WHITE),
+    F(Color.GREEN, Color.GREEN, Ansi.Color.GREEN),
+    B(Color.BLUE, Color.BLUE, Ansi.Color.BLUE),
+    U(Color.WHITE, Color.WHITE, Ansi.Color.WHITE),
+    D(Color.YELLOW, Color.YELLOW, Ansi.Color.YELLOW),
     R(Color.RED, Color.RED, Ansi.Color.RED),
     L(Color.ORANGE, Color.ORANGE, Ansi.Color.MAGENTA);
 

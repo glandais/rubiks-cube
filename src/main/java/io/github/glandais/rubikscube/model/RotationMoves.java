@@ -2,7 +2,54 @@ package io.github.glandais.rubikscube.model;
 
 import lombok.experimental.UtilityClass;
 
-import static io.github.glandais.rubikscube.model.FaceletConstants.*;
+import static io.github.glandais.rubikscube.model.FaceletConstants.B0;
+import static io.github.glandais.rubikscube.model.FaceletConstants.B1;
+import static io.github.glandais.rubikscube.model.FaceletConstants.B2;
+import static io.github.glandais.rubikscube.model.FaceletConstants.B3;
+import static io.github.glandais.rubikscube.model.FaceletConstants.B5;
+import static io.github.glandais.rubikscube.model.FaceletConstants.B6;
+import static io.github.glandais.rubikscube.model.FaceletConstants.B7;
+import static io.github.glandais.rubikscube.model.FaceletConstants.B8;
+import static io.github.glandais.rubikscube.model.FaceletConstants.D0;
+import static io.github.glandais.rubikscube.model.FaceletConstants.D1;
+import static io.github.glandais.rubikscube.model.FaceletConstants.D2;
+import static io.github.glandais.rubikscube.model.FaceletConstants.D3;
+import static io.github.glandais.rubikscube.model.FaceletConstants.D5;
+import static io.github.glandais.rubikscube.model.FaceletConstants.D6;
+import static io.github.glandais.rubikscube.model.FaceletConstants.D7;
+import static io.github.glandais.rubikscube.model.FaceletConstants.D8;
+import static io.github.glandais.rubikscube.model.FaceletConstants.F0;
+import static io.github.glandais.rubikscube.model.FaceletConstants.F1;
+import static io.github.glandais.rubikscube.model.FaceletConstants.F2;
+import static io.github.glandais.rubikscube.model.FaceletConstants.F3;
+import static io.github.glandais.rubikscube.model.FaceletConstants.F5;
+import static io.github.glandais.rubikscube.model.FaceletConstants.F6;
+import static io.github.glandais.rubikscube.model.FaceletConstants.F7;
+import static io.github.glandais.rubikscube.model.FaceletConstants.F8;
+import static io.github.glandais.rubikscube.model.FaceletConstants.L0;
+import static io.github.glandais.rubikscube.model.FaceletConstants.L1;
+import static io.github.glandais.rubikscube.model.FaceletConstants.L2;
+import static io.github.glandais.rubikscube.model.FaceletConstants.L3;
+import static io.github.glandais.rubikscube.model.FaceletConstants.L5;
+import static io.github.glandais.rubikscube.model.FaceletConstants.L6;
+import static io.github.glandais.rubikscube.model.FaceletConstants.L7;
+import static io.github.glandais.rubikscube.model.FaceletConstants.L8;
+import static io.github.glandais.rubikscube.model.FaceletConstants.R0;
+import static io.github.glandais.rubikscube.model.FaceletConstants.R1;
+import static io.github.glandais.rubikscube.model.FaceletConstants.R2;
+import static io.github.glandais.rubikscube.model.FaceletConstants.R3;
+import static io.github.glandais.rubikscube.model.FaceletConstants.R5;
+import static io.github.glandais.rubikscube.model.FaceletConstants.R6;
+import static io.github.glandais.rubikscube.model.FaceletConstants.R7;
+import static io.github.glandais.rubikscube.model.FaceletConstants.R8;
+import static io.github.glandais.rubikscube.model.FaceletConstants.U0;
+import static io.github.glandais.rubikscube.model.FaceletConstants.U1;
+import static io.github.glandais.rubikscube.model.FaceletConstants.U2;
+import static io.github.glandais.rubikscube.model.FaceletConstants.U3;
+import static io.github.glandais.rubikscube.model.FaceletConstants.U5;
+import static io.github.glandais.rubikscube.model.FaceletConstants.U6;
+import static io.github.glandais.rubikscube.model.FaceletConstants.U7;
+import static io.github.glandais.rubikscube.model.FaceletConstants.U8;
 
 @UtilityClass
 public class RotationMoves {

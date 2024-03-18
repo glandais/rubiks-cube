@@ -1,4 +1,4 @@
-package io.github.glandais.rubikscube.jfx;
+package io.github.glandais.rubikscube.jfx.scene;
 
 import io.github.glandais.rubikscube.model.FaceletEnum;
 import javafx.geometry.Point3D;

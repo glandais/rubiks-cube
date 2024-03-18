@@ -1,7 +1,7 @@
 package io.github.glandais.rubikscube.cli;
 
-import io.github.glandais.rubikscube.jfx.RubiksCubeInteract;
 import io.github.glandais.rubikscube.jfx.RubiksCubeApplication;
+import io.github.glandais.rubikscube.jfx.scene.RubiksCubeInteract;
 import picocli.CommandLine;
 
 import java.util.concurrent.Callable;

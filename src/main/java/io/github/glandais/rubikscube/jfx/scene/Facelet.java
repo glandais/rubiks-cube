@@ -1,5 +1,6 @@
-package io.github.glandais.rubikscube.jfx;
+package io.github.glandais.rubikscube.jfx.scene;
 
+import io.github.glandais.rubikscube.model.FaceletEnum;
 import io.github.glandais.rubikscube.model.SideEnum;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
@@ -15,9 +16,9 @@ public class Facelet extends Group {
     private final SideEnum sideEnum;
     private final Cube cube;
 
-    private Facelet3DEnum facelet3DEnum;
-    private Point3D initialPosition;
-    private Point3D currentPosition;
+    private FaceletEnum initialPosition;
+    private FaceletEnum currentPosition;
+    private Point3D currentPosition3D;
 
     public Facelet(Cube cube, SideEnum sideEnum) {
         super();
@@ -37,11 +38,11 @@ public class Facelet extends Group {
     private void addFaces(int w, int h, int d, int dc) {
         if (
                 (sideEnum == SideEnum.F && cube.getZ() == 1) ||
-                        (sideEnum == SideEnum.B && cube.getZ() == -1) ||
-                        (sideEnum == SideEnum.U && cube.getY() == 1) ||
-                        (sideEnum == SideEnum.D && cube.getY() == -1) ||
-                        (sideEnum == SideEnum.R && cube.getX() == 1) ||
-                        (sideEnum == SideEnum.L && cube.getX() == -1)
+                (sideEnum == SideEnum.B && cube.getZ() == -1) ||
+                (sideEnum == SideEnum.U && cube.getY() == 1) ||
+                (sideEnum == SideEnum.D && cube.getY() == -1) ||
+                (sideEnum == SideEnum.R && cube.getX() == 1) ||
+                (sideEnum == SideEnum.L && cube.getX() == -1)
         ) {
             addFace(w * 0.95, h * 0.95, d * 0.95, dc * 0.5, true);
         }
@@ -49,7 +50,7 @@ public class Facelet extends Group {
     }
 
     private void addFace(double w, double h, double d, double dc, boolean trueColor) {
-        Box face = new Box(2 * w, 2 * h, 2 * d);
+        Box face = new FaceletBox(this, 2 * w, 2 * h, 2 * d);
         Translate translate;
         if (w == 0) {
             translate = new Translate(2 * dc, 0, 0);
@@ -65,13 +66,16 @@ public class Facelet extends Group {
             material.setSpecularColor(sideEnum.getColor());
             face.setMaterial(material);
 
-            this.initialPosition = new Point3D(
+            this.currentPosition3D = new Point3D(
                     cube.getX() + translate.getX(),
                     cube.getY() + translate.getY(),
                     cube.getZ() + translate.getZ()
             );
-            this.currentPosition = this.initialPosition;
-            this.facelet3DEnum = Facelet3DEnum.of(this.initialPosition);
+            Facelet3DEnum facelet3DEnum = Facelet3DEnum.of(this.currentPosition3D);
+            if (facelet3DEnum != null) {
+                this.initialPosition = facelet3DEnum.getFaceletEnum();
+                this.currentPosition = this.initialPosition;
+            }
         } else {
             face.setMaterial(new PhongMaterial(Color.BLACK));
         }
@@ -79,19 +83,22 @@ public class Facelet extends Group {
     }
 
     public void rotate(Rotate rotate) {
-        if (this.currentPosition != null) {
-            this.currentPosition = rotate.transform(this.currentPosition);
+        if (this.currentPosition3D != null) {
+            this.currentPosition3D = rotate.transform(this.currentPosition3D);
+            Facelet3DEnum facelet3DEnum = Facelet3DEnum.of(this.currentPosition3D);
+            if (facelet3DEnum != null) {
+                this.currentPosition = facelet3DEnum.getFaceletEnum();
+            }
         }
     }
 
     @Override
     public String toString() {
-        return "SmallCubeFace{" +
-                "smallCube=" + cube.getInitialPosition() +
-                ", side=" + sideEnum +
-                ", facelet3DEnum=" + facelet3DEnum +
-                ", initialPosition=" + initialPosition +
-                ", currentPosition=" + currentPosition +
-                '}';
+        return "Facelet{" +
+               "smallCube=" + cube.getInitialPosition() +
+               ", initialPosition=" + initialPosition +
+               ", currentPosition=" + currentPosition +
+               '}';
     }
+
 }

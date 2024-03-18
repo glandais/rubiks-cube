@@ -1,4 +1,4 @@
-package io.github.glandais.rubikscube.jfx;
+package io.github.glandais.rubikscube.jfx.scene;
 
 import io.github.glandais.rubikscube.model.SideEnum;
 import javafx.geometry.Point3D;
@@ -28,7 +28,7 @@ public class Cube extends Group {
         for (SideEnum sideEnum : SideEnum.values()) {
             Facelet facelet = new Facelet(this, sideEnum);
             faces.add(facelet);
-            if (facelet.getFacelet3DEnum() != null) {
+            if (facelet.getInitialPosition() != null) {
                 realFaces.add(facelet);
             }
             getChildren().add(facelet);
