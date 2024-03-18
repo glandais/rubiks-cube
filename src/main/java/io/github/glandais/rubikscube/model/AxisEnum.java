@@ -1,4 +1,7 @@
 package io.github.glandais.rubikscube.model;
 
-public class Cube3 {
+public enum AxisEnum {
+    X,
+    Y,
+    Z;
 }

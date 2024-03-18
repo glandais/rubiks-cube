@@ -1,5 +1,9 @@
 package io.github.glandais.rubikscube.jfx;
 
+import cs.min2phase.Search;
+import cs.min2phase.SearchWCA;
+import cs.min2phase.Tools;
+import io.github.glandais.rubikscube.model.RotationEnum;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -9,30 +13,40 @@ import javafx.scene.input.*;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.util.Duration;
-import lombok.Setter;
+import lombok.Getter;
+import org.worldcubeassociation.tnoodle.puzzle.ThreeByThreeCubeFewestMovesPuzzle;
+import org.worldcubeassociation.tnoodle.scrambles.Puzzle;
+import org.worldcubeassociation.tnoodle.scrambles.PuzzleStateAndGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static io.github.glandais.rubikscube.model.RotationEnum.*;
 import static javafx.scene.transform.Rotate.*;
 
 public class RubiksCubeInteract {
-    @Setter
-    private PerspectiveCamera camera;
-    @Setter
-    private Cube cube;
+    private final Search search;
+    @Getter
+    private PerspectiveCamera camera = new PerspectiveCamera(true);
+    @Getter
+    private Cube3 cube3 = new Cube3();
 
     private Translate translateCamera;
 
-    private final List<Rotation> rotations = new ArrayList<>();
+    private final List<RotationModel> rotationModels = new ArrayList<>();
 
     private double anchorX;
     private double anchorY;
     private Rotate rotateX = new Rotate(-135, X_AXIS);
     private Double dRotateX = 0.0;
-    private Rotate rotateY = new Rotate(315, Rotate.Y_AXIS);
+    private Rotate rotateY = new Rotate(315, Y_AXIS);
     private Double dRotateY = 0.0;
+
+    public RubiksCubeInteract() {
+        Search.init();
+        this.search = new Search();
+    }
 
     public void setOnKeyPressed(KeyEvent ke) {
         if (ke.getCode() == KeyCode.LEFT) {
@@ -68,30 +82,30 @@ public class RubiksCubeInteract {
             dRotateX = 0.0;
         }
 
-        String modifier = "";
+        RotationModifierEnum modifier = RotationModifierEnum.NORMAL;
         if (ke.isShiftDown()) {
-            modifier = "2";
+            modifier = RotationModifierEnum.DOUBLE;
         } else if (ke.isAltDown()) {
-            modifier = "'";
+            modifier = RotationModifierEnum.REVERSED;
         }
 
         if (ke.getCode() == KeyCode.F) {
-            rotateUser("F" + modifier);
+            rotateUser(F, modifier);
         }
         if (ke.getCode() == KeyCode.B) {
-            rotateUser("B" + modifier);
+            rotateUser(B, modifier);
         }
         if (ke.getCode() == KeyCode.U) {
-            rotateUser("U" + modifier);
+            rotateUser(U, modifier);
         }
         if (ke.getCode() == KeyCode.D) {
-            rotateUser("D" + modifier);
+            rotateUser(D, modifier);
         }
         if (ke.getCode() == KeyCode.R) {
-            rotateUser("R" + modifier);
+            rotateUser(R, modifier);
         }
         if (ke.getCode() == KeyCode.L) {
-            rotateUser("L" + modifier);
+            rotateUser(L, modifier);
         }
         if (ke.getCode() == KeyCode.ESCAPE) {
             reset();
@@ -99,8 +113,8 @@ public class RubiksCubeInteract {
         if (ke.getCode() == KeyCode.F12) {
             debug();
         }
-        if (ke.getCode() == KeyCode.F10) {
-            getMoves();
+        if (ke.getCode() == KeyCode.F2) {
+            scramble();
         }
 //        System.out.println("keyReleased " + ke);
     }
@@ -142,82 +156,84 @@ public class RubiksCubeInteract {
         translateCamera.setZ(z);
     }
 
-    private void reset() {
-        translateCamera = new Translate(0, 0, -30);
-        camera.getTransforms().setAll(translateCamera);
-        rotateX = new Rotate(-135, X_AXIS);
-        rotateY = new Rotate(315, Rotate.Y_AXIS);
-        cube.getTransforms().setAll(rotateX, rotateY);
-        cube.reset();
-    }
-
-    public void rotateUser(String rotation) {
+    public void resetView() {
         synchronized (this) {
-            if (rotations.isEmpty()) {
-                rotate(rotation, 500);
+            translateCamera = new Translate(0, 0, -30);
+            camera.getTransforms().setAll(translateCamera);
+            rotateX = new Rotate(-135, X_AXIS);
+            rotateY = new Rotate(315, Y_AXIS);
+            cube3.getTransforms().setAll(rotateX, rotateY);
+        }
+    }
+
+    public void reset() {
+        synchronized (this) {
+            cube3.reset();
+            rotationModels.clear();
+        }
+    }
+
+    public void rotateUser(RotationEnum rotation, RotationModifierEnum modifierEnum) {
+        synchronized (this) {
+            if (rotationModels.isEmpty()) {
+                RotationModel rotationModel = getRotationModel(rotation, modifierEnum, 100);
+                rotationModels.add(rotationModel);
             }
         }
     }
 
-    public void rotate(String rotation, long duration) {
-        char move = rotation.charAt(0);
-
-        double angle = 90.0;
-        if (rotation.length() > 1) {
-            char mod = rotation.charAt(1);
-            if (mod == '2') {
-                angle = 180;
-            } else if (mod == '\'') {
-                angle = -90;
+    private void scramble() {
+        synchronized (this) {
+            reset();
+            rotationModels.clear();
+            ThreeByThreeCubeFewestMovesPuzzle puzzle = new ThreeByThreeCubeFewestMovesPuzzle();
+            String scramble = puzzle.generateScramble();
+            String facelets = Tools.fromScramble(scramble);
+            String solution = search.solution(facelets, 21, 100000000, 20000, 0);
+            System.out.println("Scramble : " + scramble);
+            System.out.println("Solution : " + solution);
+            String[] moves = scramble.split(" ");
+            for (String move : moves) {
+                if (!move.isEmpty()) {
+                    RotationEnum rotationEnum = forNotation(move);
+                    rotate(rotationEnum, 50);
+                }
+            }
+            for (String move : solution.split(" ")) {
+                if (!move.isEmpty()) {
+                    RotationEnum rotationEnum = forNotation(move);
+                    rotate(rotationEnum, 300);
+                }
             }
         }
+    }
 
-        Point3D axis;
-        Integer x = null;
-        Integer y = null;
-        Integer z = null;
-        switch (move) {
-            case 'F': {
-                axis = Z_AXIS;
-                z = 1;
-                angle = -angle;
-                break;
-            }
-            case 'B': {
-                axis = Z_AXIS;
-                z = -1;
-                break;
-            }
-            case 'U': {
-                axis = Y_AXIS;
-                y = 1;
-                angle = -angle;
-                break;
-            }
-            case 'D': {
-                axis = Y_AXIS;
-                y = -1;
-                break;
-            }
-            case 'R': {
-                axis = X_AXIS;
-                x = 1;
-                angle = -angle;
-                break;
-            }
-            case 'L': {
-                axis = X_AXIS;
-                x = -1;
-                break;
-            }
-            default:
-                throw new IllegalArgumentException("Invalid rotation " + rotation);
+    public void rotate(RotationEnum rotation, long duration) {
+        synchronized (this) {
+            RotationModel rotationModel = getRotationModel(rotation, RotationModifierEnum.NORMAL, duration);
+            rotationModels.add(rotationModel);
         }
-        List<SmallCube> rotated = cube.getSmallCubes(x, y, z);
-        rotations.add(new Rotation(angle, axis, rotated, duration));
+    }
+
+    private RotationModel getRotationModel(RotationEnum rotation, RotationModifierEnum modifierEnum, long duration) {
+        Point3D axis = switch (rotation.getAxis()) {
+            case X -> X_AXIS;
+            case Y -> Y_AXIS;
+            case Z -> Z_AXIS;
+        };
+        Integer x = rotation.getX();
+        Integer y = rotation.getY();
+        Integer z = rotation.getZ();
+        double angle = rotation.getAngle();
+        switch (modifierEnum) {
+            case DOUBLE -> angle = 2.0 * angle;
+            case REVERSED -> angle = -angle;
+        }
+        return new RotationModel(cube3, angle, axis, x, y, z, duration);
     }
 
     public void start() {
+        resetView();
         reset();
         // The main game loop
         Timeline gameLoop = new Timeline();
@@ -239,10 +255,10 @@ public class RubiksCubeInteract {
         rotateY.setAngle(rotateY.getAngle() + dRotateY);
 
         synchronized (this) {
-            if (!rotations.isEmpty()) {
-                Rotation rotation = rotations.getFirst();
-                if (!rotation.apply(ellapsed)) {
-                    rotations.removeFirst();
+            if (!rotationModels.isEmpty()) {
+                RotationModel rotationModel = rotationModels.getFirst();
+                if (!rotationModel.apply()) {
+                    rotationModels.removeFirst();
                 }
             }
         }
@@ -251,17 +267,28 @@ public class RubiksCubeInteract {
     private void debug() {
         System.out.println(rotateX);
         System.out.println(rotateY);
-        for (SmallCube smallCube : cube.getSmallCubes()) {
-            System.out.println(smallCube);
-            for (SmallCubeFace face : smallCube.getFaces()) {
-                if (face.isRealSide()) {
-                    System.out.println(face);
-                }
+        for (Cube cube : cube3.getCubes()) {
+            System.out.println(cube);
+            for (Facelet face : cube.getFaces()) {
+                System.out.println(face);
             }
+        }
+        System.out.println("****");
+        for (Facelet facelet : cube3.getFacelets().values()) {
+            System.out.println(facelet);
         }
     }
 
-    private void getMoves() {
+    public byte[] getMoves(RotationEnum rotation) {
+        reset();
+        RotationModel rotationModel = getRotationModel(rotation, RotationModifierEnum.NORMAL, -1);
+        rotationModel.apply();
+        byte[] newPositions = new byte[48];
+        for (Facelet facelet : cube3.getFacelets().values()) {
+            Facelet3DEnum newPosition = Facelet3DEnum.of(facelet.getCurrentPosition());
+            newPositions[facelet.getFacelet3DEnum().ordinal()] = (byte) newPosition.ordinal();
+        }
+        return newPositions;
     }
 
 }

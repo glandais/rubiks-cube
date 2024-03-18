@@ -1,6 +1,9 @@
 package io.github.glandais.rubikscube.jfx;
 
+import io.github.glandais.rubikscube.model.SideEnum;
+import javafx.geometry.Point3D;
 import javafx.scene.Group;
+import javafx.scene.transform.Rotate;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -9,45 +12,53 @@ import java.util.List;
 @Getter
 public class Cube extends Group {
 
-    private static final boolean SHOW_AXES = true;
+    private final Point3D initialPosition;
+    private Point3D currentPosition;
 
-    private List<SmallCube> smallCubes;
+    private final List<Facelet> faces;
+    private final List<Facelet> realFaces;
 
-    public Cube() {
+    public Cube(int x, int y, int z) {
         super();
-        reset();
-    }
+        this.initialPosition = new Point3D(x, y, z);
+        this.currentPosition = new Point3D(x, y, z);
 
-    public void reset() {
-        smallCubes = new ArrayList<>();
-        getChildren().clear();
-        for (int i = -1; i <= 1; i++) {
-            for (int j = -1; j <= 1; j++) {
-                for (int k = -1; k <= 1; k++) {
-                    SmallCube smallCube = new SmallCube(i, j, k);
-                    smallCubes.add(smallCube);
-                }
+        this.faces = new ArrayList<>();
+        this.realFaces = new ArrayList<>();
+        for (SideEnum sideEnum : SideEnum.values()) {
+            Facelet facelet = new Facelet(this, sideEnum);
+            faces.add(facelet);
+            if (facelet.getFacelet3DEnum() != null) {
+                realFaces.add(facelet);
             }
-        }
-        getChildren().addAll(smallCubes);
-
-        if (SHOW_AXES) {
-            Axes axes = new Axes();
-            getChildren().add(axes);
+            getChildren().add(facelet);
         }
     }
 
-    public List<SmallCube> getSmallCubes(Integer x, Integer y, Integer z) {
-        return smallCubes.stream()
-                .filter(c -> {
-                    if (x != null && x.equals(c.getX())) {
-                        return true;
-                    }
-                    if (y != null && y.equals(c.getY())) {
-                        return true;
-                    }
-                    return z != null && z.equals(c.getZ());
-                })
-                .toList();
+    public void rotate(Rotate rotate) {
+        this.currentPosition = rotate.transform(this.currentPosition);
+        for (Facelet face : faces) {
+            face.rotate(rotate);
+        }
+    }
+
+    public int getX() {
+        return (int) (Math.round(this.currentPosition.getX()));
+    }
+
+    public int getY() {
+        return (int) (Math.round(this.currentPosition.getY()));
+    }
+
+    public int getZ() {
+        return (int) (Math.round(this.currentPosition.getZ()));
+    }
+
+    @Override
+    public String toString() {
+        return "SmallCube{" +
+                "initialPosition=" + initialPosition +
+                ", currentPosition=" + currentPosition +
+                '}';
     }
 }

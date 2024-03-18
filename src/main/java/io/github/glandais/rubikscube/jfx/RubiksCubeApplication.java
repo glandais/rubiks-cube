@@ -18,17 +18,11 @@ public class RubiksCubeApplication extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        PerspectiveCamera camera = new PerspectiveCamera(true);
-        RubiksCubeApplication.rubiksCubeInteract.setCamera(camera);
-
         Group root = new Group();
-        root.getChildren().add(camera);
+        root.getChildren().add(RubiksCubeApplication.rubiksCubeInteract.getCamera());
+        root.getChildren().add(RubiksCubeApplication.rubiksCubeInteract.getCube3());
 
-        Cube cube = new Cube();
-        RubiksCubeApplication.rubiksCubeInteract.setCube(cube);
-        root.getChildren().add(cube);
-
-        Scene scene = getScene(root, camera);
+        Scene scene = getScene(root, RubiksCubeApplication.rubiksCubeInteract.getCamera());
 
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);
