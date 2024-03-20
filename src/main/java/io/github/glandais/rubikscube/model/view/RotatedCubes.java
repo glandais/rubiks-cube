@@ -3,7 +3,6 @@ package io.github.glandais.rubikscube.model.view;
 import io.github.glandais.rubikscube.model.FaceletEnum;
 import io.github.glandais.rubikscube.model.SideEnum;
 import io.github.glandais.rubikscube.model.SideOppositeEnum;
-import io.github.glandais.rubikscube.model.view.CubeVisibleOrientation;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +26,11 @@ public class RotatedCubes {
         addRealPositions(CubeVisibleOrientation.UP_RIGHT);
         addRealPositions(CubeVisibleOrientation.UP_BACK);
         addRealPositions(CubeVisibleOrientation.UP_LEFT);
+
+        addRealPositions(CubeVisibleOrientation.DOWN_FRONT);
+        addRealPositions(CubeVisibleOrientation.DOWN_RIGHT);
+        addRealPositions(CubeVisibleOrientation.DOWN_BACK);
+        addRealPositions(CubeVisibleOrientation.DOWN_LEFT);
     }
 
     private static void buildFaceRotations() {
@@ -80,6 +84,9 @@ public class RotatedCubes {
         if (view.u() == U) {
             addRealPositionsUp(view);
         }
+        if (view.u() == D) {
+            addRealPositionsDown(view);
+        }
     }
 
     private static void addRealPositionsUp(CubeVisibleOrientation view) {
@@ -98,6 +105,25 @@ public class RotatedCubes {
         addFace(positions, SideOppositeEnum.getOpposite(view.u()), D, -angle);
         addFace(positions, view.r(), R, 0);
         addFace(positions, SideOppositeEnum.getOpposite(view.r()), L, 0);
+        realPositions.put(view, positions);
+    }
+
+    private static void addRealPositionsDown(CubeVisibleOrientation view) {
+        byte[] positions = new byte[48];
+        int angle = 180;
+        if (view.f() == R) {
+            angle = 90;
+        } else if (view.f() == B) {
+            angle = 0;
+        } else if (view.f() == L) {
+            angle = -90;
+        }
+        addFace(positions, view.f(), F, 180);
+        addFace(positions, SideOppositeEnum.getOpposite(view.f()), B, 180);
+        addFace(positions, view.u(), U, angle);
+        addFace(positions, SideOppositeEnum.getOpposite(view.u()), D, -angle);
+        addFace(positions, view.r(), R, 180);
+        addFace(positions, SideOppositeEnum.getOpposite(view.r()), L, 180);
         realPositions.put(view, positions);
     }
 

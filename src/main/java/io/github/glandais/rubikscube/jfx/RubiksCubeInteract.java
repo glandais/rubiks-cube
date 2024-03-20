@@ -11,12 +11,12 @@ import io.github.glandais.rubikscube.model.SideEnum;
 import io.github.glandais.rubikscube.model.rotation.RotationEnum;
 import io.github.glandais.rubikscube.model.rotation.gui.FaceletDirectionEnum;
 import io.github.glandais.rubikscube.model.rotation.gui.FaceletRotationEnum;
-import io.github.glandais.rubikscube.model.solver.Scrambler;
-import io.github.glandais.rubikscube.model.solver.Solver;
-import io.github.glandais.rubikscube.model.solver.dummy.DummySolver;
-import io.github.glandais.rubikscube.model.solver.dummy.DummySolverInstance;
-import io.github.glandais.rubikscube.model.solver.tnoodle.TNoodleSolver;
 import io.github.glandais.rubikscube.model.view.CubeVisibleOrientation;
+import io.github.glandais.rubikscube.solver.Scrambler;
+import io.github.glandais.rubikscube.solver.Solver;
+import io.github.glandais.rubikscube.solver.dummy.DummySolver;
+import io.github.glandais.rubikscube.solver.dummy.DummySolverInstance;
+import io.github.glandais.rubikscube.solver.tnoodle.TNoodleSolver;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -435,11 +435,18 @@ public class RubiksCubeInteract {
 
     @Synchronized
     public void reset() {
-        rotationPlayModels.clear();
+        clearRotationModels();
         view.reset();
         cube3Model.reset();
         historyIndex = -1;
         history = new ArrayList<>();
+    }
+
+    private void clearRotationModels() {
+        if (!rotationPlayModels.isEmpty()) {
+            rotationPlayModels.getFirst().cancel();
+        }
+        rotationPlayModels.clear();
     }
 
     @Synchronized
@@ -455,19 +462,30 @@ public class RubiksCubeInteract {
 
     @Synchronized
     public void solveTNoodle() {
-        rotationPlayModels.clear();
-        doSolve(cube3Model.getNotation(), tnoodleSolver);
+        clearRotationModels();
+        doSolve(cube3Model.getNotation(), tnoodleSolver, 200);
+    }
+
+    @Synchronized
+    public void solveDummy() {
+        clearRotationModels();
+        doSolve(cube3Model.getNotation(), dummySolver, 50);
     }
 
     @Synchronized
     public void scrambleAndSolveTNoodle() {
-        scrambleAndSolve(tnoodleSolver);
+        scrambleAndSolve(tnoodleSolver, 200);
     }
 
-    private void scrambleAndSolve(Solver solver) {
+    @Synchronized
+    public void scrambleAndSolveDummy() {
+        scrambleAndSolve(dummySolver, 50);
+    }
+
+    private void scrambleAndSolve(Solver solver, int duration) {
         reset();
         String scramble = doScramble();
-        doSolve(scramble, solver);
+        doSolve(scramble, solver, duration);
     }
 
     private String doScramble() {
@@ -477,9 +495,9 @@ public class RubiksCubeInteract {
         return moves;
     }
 
-    private void doSolve(String moves, Solver solver) {
+    private void doSolve(String moves, Solver solver, int duration) {
         String solution = solver.solve(moves);
-        applyMoves(solution, false, true, 150);
+        applyMoves(solution, false, true, duration);
     }
 
     @Synchronized
@@ -568,11 +586,11 @@ public class RubiksCubeInteract {
     }
 
     private void solvePhase(int toPhase) {
-        rotationPlayModels.clear();
+        clearRotationModels();
         String state = cube3Model.getNotation();
         DummySolverInstance dummySolverInstance = new DummySolverInstance(state);
         dummySolverInstance.solve(toPhase);
-        applyMoves(dummySolverInstance.getMovesNotation(), false, true, 100);
+        applyMoves(dummySolverInstance.getMovesNotation(), false, true, 50);
     }
 
 }

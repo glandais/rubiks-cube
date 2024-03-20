@@ -2,7 +2,6 @@ package io.github.glandais.rubikscube.model;
 
 import javafx.scene.paint.Color;
 import lombok.Getter;
-import org.fusesource.jansi.Ansi;
 
 @Getter
 public enum SideEnum {

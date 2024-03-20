@@ -153,6 +153,10 @@ public class RubiksCubeApplication extends Application {
         gridPane.add(solve, 6, 2);
         Button scrambleSolve = new ActionButton("Scramble & Solve", RubiksCubeApplication.rubiksCubeInteract::scrambleAndSolveTNoodle);
         gridPane.add(scrambleSolve, 6, 3);
+        Button solveDummy = new ActionButton("Solve dummy", RubiksCubeApplication.rubiksCubeInteract::solveDummy);
+        gridPane.add(solveDummy, 7, 2);
+        Button scrambleSolveDummy = new ActionButton("Scramble & Solve dummy", RubiksCubeApplication.rubiksCubeInteract::scrambleAndSolveDummy);
+        gridPane.add(scrambleSolveDummy, 7, 3);
 
         return List.of(gridPane);
     }

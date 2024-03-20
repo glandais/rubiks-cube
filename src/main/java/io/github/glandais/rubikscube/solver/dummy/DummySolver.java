@@ -1,6 +1,6 @@
-package io.github.glandais.rubikscube.model.solver.dummy;
+package io.github.glandais.rubikscube.solver.dummy;
 
-import io.github.glandais.rubikscube.model.solver.Solver;
+import io.github.glandais.rubikscube.solver.Solver;
 
 public class DummySolver implements Solver {
 

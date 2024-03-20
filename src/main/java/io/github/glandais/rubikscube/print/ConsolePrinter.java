@@ -1,9 +1,9 @@
 package io.github.glandais.rubikscube.print;
 
 import io.github.glandais.rubikscube.model.Cube3Model;
-import io.github.glandais.rubikscube.model.view.CubeVisibleOrientation;
 import io.github.glandais.rubikscube.model.FaceletEnum;
 import io.github.glandais.rubikscube.model.SideEnum;
+import io.github.glandais.rubikscube.model.view.CubeVisibleOrientation;
 
 import java.util.ArrayList;
 import java.util.List;

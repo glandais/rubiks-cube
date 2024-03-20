@@ -1,6 +1,6 @@
 package io.github.glandais.rubikscube;
 
-import io.github.glandais.rubikscube.model.solver.Scrambler;
+import io.github.glandais.rubikscube.solver.Scrambler;
 import lombok.SneakyThrows;
 
 import java.io.BufferedReader;

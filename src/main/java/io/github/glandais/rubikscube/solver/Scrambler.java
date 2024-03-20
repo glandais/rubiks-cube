@@ -1,4 +1,4 @@
-package io.github.glandais.rubikscube.model.solver;
+package io.github.glandais.rubikscube.solver;
 
 import cs.min2phase.Search;
 import lombok.experimental.UtilityClass;

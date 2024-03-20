@@ -1,9 +1,8 @@
-package io.github.glandais.rubikscube.model.solver.tnoodle;
+package io.github.glandais.rubikscube.solver.tnoodle;
 
 import cs.min2phase.Search;
 import cs.min2phase.Tools;
-import io.github.glandais.rubikscube.model.solver.Solver;
-import org.worldcubeassociation.tnoodle.puzzle.ThreeByThreeCubeFewestMovesPuzzle;
+import io.github.glandais.rubikscube.solver.Solver;
 
 public class TNoodleSolver implements Solver {
 
