@@ -5,6 +5,7 @@ import io.github.glandais.rubikscube.jfx.scene.Facelet;
 import io.github.glandais.rubikscube.jfx.scene.Facelet3DEnum;
 import io.github.glandais.rubikscube.jfx.scene.RotationModel;
 import io.github.glandais.rubikscube.jfx.scene.RotationPlayModel;
+import io.github.glandais.rubikscube.model.rotation.RotationEnum;
 
 public class RotationMovesGenerator {
 

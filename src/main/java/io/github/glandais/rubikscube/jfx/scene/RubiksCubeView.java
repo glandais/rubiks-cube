@@ -35,10 +35,8 @@ public class RubiksCubeView {
     public void resetView() {
         cameraTranslation = 30.0;
         updateCamera();
-        rotateX.setAngle(-180);
-        rotateY.setAngle(0);
-//        rotateX.setAngle(-135);
-//        rotateY.setAngle(315);
+        rotateX.setAngle(200);
+        rotateY.setAngle(340);
     }
 
     public void onZoom(double ratio) {
@@ -75,16 +73,24 @@ public class RubiksCubeView {
         cube3.reset();
     }
 
-    public void dRotate(Double dRotateX, Double dRotateY) {
-        double angleX = mod360(rotateX.getAngle() + dRotateX);
+    public void rotate(double dx, double dy) {
+        double angleX = mod360(rotateX.getAngle() + dx);
         double angleY;
-        if (angleX >= 90 && angleX <=270) {
-            angleY = mod360(rotateY.getAngle() + dRotateY);
+        if (angleX >= 90 && angleX <= 270) {
+            angleY = mod360(rotateY.getAngle() + dy);
         } else {
-            angleY = mod360(rotateY.getAngle() - dRotateY);
+            angleY = mod360(rotateY.getAngle() - dy);
         }
         rotateX.setAngle(angleX);
         rotateY.setAngle(angleY);
+    }
+
+    public double getAngleX() {
+        return rotateX.getAngle();
+    }
+
+    public double getAngleY() {
+        return rotateY.getAngle();
     }
 
     private double mod360(double a) {

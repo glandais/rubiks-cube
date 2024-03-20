@@ -1,6 +1,6 @@
 package io.github.glandais.rubikscube.jfx.scene;
 
-import io.github.glandais.rubikscube.model.RotationEnum;
+import io.github.glandais.rubikscube.model.rotation.RotationEnum;
 
 public class RotationDraggedModel extends RotationModel {
 

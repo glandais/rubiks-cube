@@ -1,79 +1,82 @@
 package io.github.glandais.rubikscube.print;
 
 import io.github.glandais.rubikscube.model.Cube3Model;
+import io.github.glandais.rubikscube.model.view.CubeVisibleOrientation;
 import io.github.glandais.rubikscube.model.FaceletEnum;
 import io.github.glandais.rubikscube.model.SideEnum;
-import org.fusesource.jansi.Ansi;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
 public class ConsolePrinter {
 
-    static int si = 2;
-    static int sj = 1;
-
-    private record Position(SideEnum sideEnum, Ansi.Color ansiColor, int startI, int startJ) {
-
-        public boolean mayPrint(Cube3Model cube3Model, int i, int j) {
-            if (i >= startI * si && i < (startI + 3) * si &&
-                    j >= startJ * sj && j < (startJ + 3) * sj
-            ) {
-                int ri = i - startI * si;
-                int rj = j - startJ * sj;
-                int di = ri / si;
-                int dj = rj / sj;
-                int k = di + 3 * dj;
-                FaceletEnum faceletEnum = FaceletEnum.of(sideEnum, k);
-                ri = ri % si;
-                rj = rj % sj;
-
-                String label;
-                Ansi.Color color = ansiColor;
-                if (faceletEnum == null) {
-                    label = " ";
-                } else {
-                    faceletEnum = cube3Model.at(faceletEnum);
-                    color = faceletEnum.getSide().getAnsiColor();
-                    if (rj == 0 && ri == 0) {
-                        label = faceletEnum.getSide().name();
-                    } else if (rj == 0 && ri == 1) {
-                        label = "" + (faceletEnum.getI() + 1);
-                    } else {
-                        label = "X";
-                    }
-                }
-                System.out.print(
-                        ansi().bgBright(color)
-                                .fgBright(Ansi.Color.BLACK)
-                                .a(label)
-                                .reset()
-                );
-                return true;
-            }
-            return false;
-        }
-    }
-
-    List<Position> positions = List.of(
-            new Position(SideEnum.U, SideEnum.U.getAnsiColor(), 3, 0),
-            new Position(SideEnum.L, SideEnum.L.getAnsiColor(), 0, 3),
-            new Position(SideEnum.F, SideEnum.F.getAnsiColor(), 3, 3),
-            new Position(SideEnum.R, SideEnum.R.getAnsiColor(), 6, 3),
-            new Position(SideEnum.B, SideEnum.B.getAnsiColor(), 9, 3),
-            new Position(SideEnum.D, SideEnum.D.getAnsiColor(), 3, 6)
-    );
+    static int charWidth = 2;
+    static int charHeight = 1;
 
     public void print(Cube3Model cube3Model) {
-        for (int j = 0; j < 3 * 3 * sj; j++) {
-            for (int i = 0; i < 4 * 3 * si; i++) {
-                boolean printed = false;
-                for (Position position : positions) {
-                    printed = printed || position.mayPrint(cube3Model, i, j);
+        CubeVisibleOrientation previousView = cube3Model.getView();
+        cube3Model.setView(CubeVisibleOrientation.DEFAULT);
+        printModelView(cube3Model);
+        cube3Model.setView(previousView);
+    }
+
+    public void printModelView(Cube3Model cube3Model) {
+        System.out.println(cube3Model.getNotation());
+        List<Char> chars = new ArrayList<>();
+
+        int squareWidth = 3 * charWidth + 1;
+        int squareHeight = 3 * charHeight + 1;
+
+        for (SideEnum sideEnum : SideEnum.values()) {
+            int is = switch (sideEnum) {
+                case F -> squareWidth;
+                case B -> squareWidth * 3;
+                case U -> squareWidth;
+                case D -> squareWidth;
+                case R -> squareWidth * 2;
+                case L -> 0;
+            };
+            int js = switch (sideEnum) {
+                case F -> squareHeight;
+                case B -> squareHeight;
+                case U -> 0;
+                case D -> squareHeight * 2;
+                case R -> squareHeight;
+                case L -> squareHeight;
+            };
+            for (int j = 0; j < 3; j++) {
+                for (int i = 0; i < 3; i++) {
+                    int n = i + 3 * j;
+                    int color;
+                    char c1 = ' ';
+                    char c2 = ' ';
+                    if (n == 4) {
+                        color = sideEnum.getAnsiColor();
+                    } else {
+                        FaceletEnum faceletEnum = FaceletEnum.of(sideEnum, n);
+                        FaceletEnum at = cube3Model.getFacelet(faceletEnum);
+                        color = at.getSide().getAnsiColor();
+                        c1 = at.getSide().name().charAt(0);
+                        c2 = ("" + at.getI()).charAt(0);
+                    }
+                    chars.add(new Char(is + i * charWidth, js + j * charHeight, c1, color));
+                    chars.add(new Char(is + i * charWidth + 1, js + j * charHeight, c2, color));
                 }
-                if (!printed) {
+            }
+        }
+        int maxI = chars.stream().mapToInt(Char::i).max().getAsInt();
+        int maxJ = chars.stream().mapToInt(Char::j).max().getAsInt();
+        for (int j = 0; j <= maxJ; j++) {
+            for (int i = 0; i <= maxI; i++) {
+                int fi = i;
+                int fj = j;
+                Char c = chars.stream().filter(ch -> ch.i() == fi && ch.j() == fj).findFirst().orElse(null);
+                if (c == null) {
                     System.out.print(" ");
+                } else {
+                    System.out.print(ansi().bg(c.bg()).a(c.c()).reset());
                 }
             }
             System.out.println();

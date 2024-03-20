@@ -57,8 +57,8 @@ public class Cube extends Group {
     @Override
     public String toString() {
         return "SmallCube{" +
-                "initialPosition=" + initialPosition +
-                ", currentPosition=" + currentPosition +
-                '}';
+               "initialPosition=" + initialPosition +
+               ", currentPosition=" + currentPosition +
+               '}';
     }
 }

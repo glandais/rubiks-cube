@@ -1,4 +1,4 @@
-package io.github.glandais.rubikscube.model;
+package io.github.glandais.rubikscube.model.rotation.moves;
 
 import lombok.experimental.UtilityClass;
 

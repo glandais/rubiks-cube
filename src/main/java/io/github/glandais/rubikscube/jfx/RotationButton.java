@@ -1,13 +1,9 @@
 package io.github.glandais.rubikscube.jfx;
 
-import io.github.glandais.rubikscube.model.RotationEnum;
-import javafx.scene.control.Button;
+import io.github.glandais.rubikscube.model.rotation.RotationEnum;
 
-public class RotationButton extends Button {
+public class RotationButton extends MovesButton {
     public RotationButton(RotationEnum rotationEnum) {
-        super(rotationEnum.getNotation());
-        setOnAction(e -> {
-            RubiksCubeApplication.rubiksCubeInteract.rotate(rotationEnum, 100);
-        });
+        super(rotationEnum.getNotation(), rotationEnum.getNotation());
     }
 }

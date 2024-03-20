@@ -1,7 +1,7 @@
 package io.github.glandais.rubikscube.jfx.scene;
 
-import io.github.glandais.rubikscube.model.AxisEnum;
-import io.github.glandais.rubikscube.model.RotationEnum;
+import io.github.glandais.rubikscube.model.rotation.AxisEnum;
+import io.github.glandais.rubikscube.model.rotation.RotationEnum;
 import javafx.geometry.Point3D;
 import javafx.scene.transform.Rotate;
 import lombok.Getter;
@@ -59,13 +59,10 @@ public abstract class RotationModel {
         return rotate.getAngle();
     }
 
-
-
     @Synchronized
     public void applyRotation() {
         getRotated();
         rotate.setAngle(rotation.getAngle());
-        cube3.rotate(rotation);
         for (Cube cube : getRotated()) {
             cube.rotate(rotate);
         }

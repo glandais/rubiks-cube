@@ -1,13 +1,14 @@
 package io.github.glandais.rubikscube.jfx;
 
-import io.github.glandais.rubikscube.jfx.scene.RubiksCubeInteract;
-import io.github.glandais.rubikscube.model.RotationEnum;
+import io.github.glandais.rubikscube.model.rotation.RotationEnum;
 import javafx.application.Application;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.SubScene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
 import javafx.scene.control.ToolBar;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
@@ -139,32 +140,78 @@ public class RubiksCubeApplication extends Application {
         gridPane.add(new RotationButton(RotationEnum.D_DOUBLE), 2, 3);
         gridPane.add(new RotationButton(RotationEnum.D_REVERSE), 3, 3);
 
-        Button reset = new Button("Reset");
-        reset.setOnAction(e -> RubiksCubeApplication.rubiksCubeInteract.reset());
-        gridPane.add(reset, 5, 0);
-        Button scramble = new Button("Scramble");
-        scramble.setOnAction(e -> RubiksCubeApplication.rubiksCubeInteract.scramble());
-        gridPane.add(scramble, 5, 1);
-        Button solve = new Button("Solve");
-        solve.setOnAction(e -> RubiksCubeApplication.rubiksCubeInteract.solve());
-        gridPane.add(solve, 5, 2);
-        Button scrambleSolve = new Button("Scramble & Solve");
-        scrambleSolve.setOnAction(e -> RubiksCubeApplication.rubiksCubeInteract.scrambleAndSolve());
-        gridPane.add(scrambleSolve, 5, 3);
+        Button undo = new ActionButton("Undo", RubiksCubeApplication.rubiksCubeInteract::undo);
+        gridPane.add(undo, 5, 0);
+        Button redo = new ActionButton("Redo", RubiksCubeApplication.rubiksCubeInteract::redo);
+        gridPane.add(redo, 5, 1);
+
+        Button reset = new ActionButton("Reset", RubiksCubeApplication.rubiksCubeInteract::reset);
+        gridPane.add(reset, 6, 0);
+        Button scramble = new ActionButton("Scramble", RubiksCubeApplication.rubiksCubeInteract::scramble);
+        gridPane.add(scramble, 6, 1);
+        Button solve = new ActionButton("Solve", RubiksCubeApplication.rubiksCubeInteract::solveTNoodle);
+        gridPane.add(solve, 6, 2);
+        Button scrambleSolve = new ActionButton("Scramble & Solve", RubiksCubeApplication.rubiksCubeInteract::scrambleAndSolveTNoodle);
+        gridPane.add(scrambleSolve, 6, 3);
 
         return List.of(gridPane);
     }
 
     private List<Node> getBottom() {
-        return List.of();
+        return List.of(
+                new ActionButton("Reset view", rubiksCubeInteract::resetView),
+                new Separator(),
+                rubiksCubeInteract.getXRotationLabel(),
+                rubiksCubeInteract.getYRotationLabel()
+        );
     }
 
     private List<Node> getLeft() {
-        return List.of();
+        return List.of(
+                new ActionButton("Phase 1", rubiksCubeInteract::solvePhase1),
+                new ActionButton("Phase 2", rubiksCubeInteract::solvePhase2),
+                new ActionButton("Phase 3", rubiksCubeInteract::solvePhase3),
+                new ActionButton("Phase 4", rubiksCubeInteract::solvePhase4),
+                new ActionButton("Phase 5", rubiksCubeInteract::solvePhase5),
+                new ActionButton("Phase 6", rubiksCubeInteract::solvePhase6),
+                new ActionButton("Phase 7", rubiksCubeInteract::solvePhase7)
+        );
     }
 
     private List<Node> getRight() {
-        return List.of();
+        return List.of(
+                new Label("Phase 1"),
+                new MovesButton("From top", "F U' R U"),
+                new MovesButton("From bottom", "F' U' R U"),
+                new MovesButton("From right", "U' R U"),
+                new MovesButton("From left", "U L' U'"),
+                new Separator(),
+                new Label("Phase 2"),
+                new MovesButton("From right", "R' D' R"),
+                new MovesButton("From front", "F D F'"),
+                new MovesButton("From down", "R2 D' R2 D R2"),
+                new MovesButton("Left to down", "L D L'"),
+                new Separator(),
+                new Label("Phase 3"),
+                new MovesButton("Right", "U R U' R' U' F' U F"),
+                new MovesButton("Left", "U' L' U L U F U' F'"),
+                new MovesButton("Wrong orient", "U R U' R' U' F' U F U2 U R U' R' U' F' U F"),
+                new Separator(),
+                new Label("Phase 4"),
+                new MovesButton("Fix", "F R U R' U' F'"),
+                new MovesButton("Reversed", "F U R U' R' F'"),
+                new Separator(),
+                new Label("Phase 5"),
+                new MovesButton("Switch", "R U R' U R U2 R' U"),
+                new MovesButton("Opposite", "U R U R' U R U2 R' U y2 R U R' U R U2 R' U"),
+                new Separator(),
+                new Label("Phase 6"),
+                new MovesButton("Swap", "U R U' L' U R' U' L"),
+                new Separator(),
+                new Label("Phase 7"),
+                new MovesButton("Move", "R' D' R D"),
+                new Separator()
+        );
     }
 
 }

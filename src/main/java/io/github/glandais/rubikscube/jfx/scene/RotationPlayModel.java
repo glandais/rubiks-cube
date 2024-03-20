@@ -1,6 +1,6 @@
 package io.github.glandais.rubikscube.jfx.scene;
 
-import io.github.glandais.rubikscube.model.RotationEnum;
+import io.github.glandais.rubikscube.model.rotation.RotationEnum;
 
 public class RotationPlayModel extends RotationModel {
     private final long duration;
@@ -25,10 +25,10 @@ public class RotationPlayModel extends RotationModel {
         }
         if (ratio >= 1.0) {
             applyRotation();
-            return false;
+            return true;
         } else {
             rotate(ratio);
-            return true;
+            return false;
         }
     }
 

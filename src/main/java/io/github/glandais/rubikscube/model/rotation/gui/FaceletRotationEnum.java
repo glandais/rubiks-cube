@@ -1,15 +1,13 @@
-package io.github.glandais.rubikscube.model;
+package io.github.glandais.rubikscube.model.rotation.gui;
 
+import io.github.glandais.rubikscube.model.FaceletEnum;
+import io.github.glandais.rubikscube.model.rotation.RotationEnum;
 import lombok.experimental.UtilityClass;
 
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.glandais.rubikscube.model.FaceletDirectionEnum.DOWN;
-import static io.github.glandais.rubikscube.model.FaceletDirectionEnum.LEFT;
-import static io.github.glandais.rubikscube.model.FaceletDirectionEnum.RIGHT;
-import static io.github.glandais.rubikscube.model.FaceletDirectionEnum.UP;
 import static io.github.glandais.rubikscube.model.FaceletEnum.B0;
 import static io.github.glandais.rubikscube.model.FaceletEnum.B1;
 import static io.github.glandais.rubikscube.model.FaceletEnum.B2;
@@ -58,24 +56,28 @@ import static io.github.glandais.rubikscube.model.FaceletEnum.U5;
 import static io.github.glandais.rubikscube.model.FaceletEnum.U6;
 import static io.github.glandais.rubikscube.model.FaceletEnum.U7;
 import static io.github.glandais.rubikscube.model.FaceletEnum.U8;
-import static io.github.glandais.rubikscube.model.RotationEnum.B;
-import static io.github.glandais.rubikscube.model.RotationEnum.B_DOUBLE;
-import static io.github.glandais.rubikscube.model.RotationEnum.B_REVERSE;
-import static io.github.glandais.rubikscube.model.RotationEnum.D;
-import static io.github.glandais.rubikscube.model.RotationEnum.D_DOUBLE;
-import static io.github.glandais.rubikscube.model.RotationEnum.D_REVERSE;
-import static io.github.glandais.rubikscube.model.RotationEnum.F;
-import static io.github.glandais.rubikscube.model.RotationEnum.F_DOUBLE;
-import static io.github.glandais.rubikscube.model.RotationEnum.F_REVERSE;
-import static io.github.glandais.rubikscube.model.RotationEnum.L;
-import static io.github.glandais.rubikscube.model.RotationEnum.L_DOUBLE;
-import static io.github.glandais.rubikscube.model.RotationEnum.L_REVERSE;
-import static io.github.glandais.rubikscube.model.RotationEnum.R;
-import static io.github.glandais.rubikscube.model.RotationEnum.R_DOUBLE;
-import static io.github.glandais.rubikscube.model.RotationEnum.R_REVERSE;
-import static io.github.glandais.rubikscube.model.RotationEnum.U;
-import static io.github.glandais.rubikscube.model.RotationEnum.U_DOUBLE;
-import static io.github.glandais.rubikscube.model.RotationEnum.U_REVERSE;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.B;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.B_DOUBLE;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.B_REVERSE;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.D;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.D_DOUBLE;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.D_REVERSE;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.F;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.F_DOUBLE;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.F_REVERSE;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.L;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.L_DOUBLE;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.L_REVERSE;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.R;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.R_DOUBLE;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.R_REVERSE;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.U;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.U_DOUBLE;
+import static io.github.glandais.rubikscube.model.rotation.RotationEnum.U_REVERSE;
+import static io.github.glandais.rubikscube.model.rotation.gui.FaceletDirectionEnum.DOWN;
+import static io.github.glandais.rubikscube.model.rotation.gui.FaceletDirectionEnum.LEFT;
+import static io.github.glandais.rubikscube.model.rotation.gui.FaceletDirectionEnum.RIGHT;
+import static io.github.glandais.rubikscube.model.rotation.gui.FaceletDirectionEnum.UP;
 
 @UtilityClass
 public class FaceletRotationEnum {

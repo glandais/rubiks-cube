@@ -1,12 +1,15 @@
 package io.github.glandais.rubikscube.model;
 
-import static io.github.glandais.rubikscube.model.AxisEnum.X;
-import static io.github.glandais.rubikscube.model.AxisEnum.Y;
-import static io.github.glandais.rubikscube.model.AxisEnum.Z;
+import io.github.glandais.rubikscube.model.rotation.AxisEnum;
+
+import static io.github.glandais.rubikscube.model.rotation.AxisEnum.X;
+import static io.github.glandais.rubikscube.model.rotation.AxisEnum.Y;
+import static io.github.glandais.rubikscube.model.rotation.AxisEnum.Z;
 
 public class RotationEnumGenerator {
 
     public static void main(String[] args) {
+        // code changed since
         for (SideEnum sideEnum : SideEnum.values()) {
             getRotation(sideEnum.name(), sideEnum.name());
             getRotation(sideEnum + "_DOUBLE", sideEnum + "2");
