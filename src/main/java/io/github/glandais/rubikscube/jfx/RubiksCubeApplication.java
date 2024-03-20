@@ -149,14 +149,10 @@ public class RubiksCubeApplication extends Application {
         gridPane.add(reset, 6, 0);
         Button scramble = new ActionButton("Scramble", RubiksCubeApplication.rubiksCubeInteract::scramble);
         gridPane.add(scramble, 6, 1);
-        Button solve = new ActionButton("Solve", RubiksCubeApplication.rubiksCubeInteract::solveTNoodle);
-        gridPane.add(solve, 6, 2);
-        Button scrambleSolve = new ActionButton("Scramble & Solve", RubiksCubeApplication.rubiksCubeInteract::scrambleAndSolveTNoodle);
-        gridPane.add(scrambleSolve, 6, 3);
-        Button solveDummy = new ActionButton("Solve dummy", RubiksCubeApplication.rubiksCubeInteract::solveDummy);
-        gridPane.add(solveDummy, 7, 2);
-        Button scrambleSolveDummy = new ActionButton("Scramble & Solve dummy", RubiksCubeApplication.rubiksCubeInteract::scrambleAndSolveDummy);
-        gridPane.add(scrambleSolveDummy, 7, 3);
+        Button solveDummy = new ActionButton("Solve", RubiksCubeApplication.rubiksCubeInteract::solveDummy);
+        gridPane.add(solveDummy, 6, 2);
+        Button solve = new ActionButton("Solve min2phase", RubiksCubeApplication.rubiksCubeInteract::solveTNoodle);
+        gridPane.add(solve, 6, 3);
 
         return List.of(gridPane);
     }

@@ -96,18 +96,14 @@ public class RubiksCubeInteract {
     @Synchronized
     public void start() {
         resetView();
-        reset();
+        doScramble(0);
         // The main game loop
         Timeline gameLoop = new Timeline();
         gameLoop.setCycleCount(Animation.INDEFINITE);
         AtomicLong last = new AtomicLong(System.currentTimeMillis());
         KeyFrame keyFrame = new KeyFrame(
                 Duration.seconds(1.0f / 60.0f), // 60 FPS
-                ae -> {
-                    long now = System.currentTimeMillis();
-                    long ellapsed = now - last.getAndSet(now);
-                    update(ellapsed);
-                });
+                ae -> update());
         gameLoop.getKeyFrames().add(keyFrame);
         gameLoop.play();
     }
@@ -456,46 +452,29 @@ public class RubiksCubeInteract {
 
     @Synchronized
     public void scramble() {
-        reset();
-        doScramble();
+        doScramble(50);
     }
 
     @Synchronized
     public void solveTNoodle() {
-        clearRotationModels();
         doSolve(cube3Model.getNotation(), tnoodleSolver, 200);
     }
 
     @Synchronized
     public void solveDummy() {
-        clearRotationModels();
         doSolve(cube3Model.getNotation(), dummySolver, 50);
     }
 
-    @Synchronized
-    public void scrambleAndSolveTNoodle() {
-        scrambleAndSolve(tnoodleSolver, 200);
-    }
-
-    @Synchronized
-    public void scrambleAndSolveDummy() {
-        scrambleAndSolve(dummySolver, 50);
-    }
-
-    private void scrambleAndSolve(Solver solver, int duration) {
+    private String doScramble(int duration) {
         reset();
-        String scramble = doScramble();
-        doSolve(scramble, solver, duration);
-    }
-
-    private String doScramble() {
         String moves = Scrambler.scramble();
         System.out.println("Scramble : " + moves);
-        applyMoves(moves, false, true, 50);
+        applyMoves(moves, false, true, duration);
         return moves;
     }
 
     private void doSolve(String moves, Solver solver, int duration) {
+        clearRotationModels();
         String solution = solver.solve(moves);
         applyMoves(solution, false, true, duration);
     }
@@ -523,12 +502,13 @@ public class RubiksCubeInteract {
     }
 
     @Synchronized
-    private void update(long ellapsed) {
+    private void update() {
         if (!rotationPlayModels.isEmpty()) {
             RotationPlayModel rotationPlayModel = rotationPlayModels.getFirst();
             if (rotationPlayModel.tick()) {
                 cube3Model.apply(rotationPlayModel.getRotation(), false);
                 rotationPlayModels.removeFirst();
+                update();
             }
         }
     }
