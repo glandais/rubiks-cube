@@ -16,12 +16,12 @@ public class RotationPlayModel extends RotationModel {
         if (rotationStart == -1) {
             rotationStart = System.currentTimeMillis();
         }
-        long rotationEllapsed = System.currentTimeMillis() - rotationStart;
+        long rotationElapsed = System.currentTimeMillis() - rotationStart;
         double ratio;
         if (duration <= 0) {
             ratio = 1.0;
         } else {
-            ratio = 1.0 * rotationEllapsed / duration;
+            ratio = 1.0 * rotationElapsed / duration;
         }
         if (ratio >= 1.0) {
             applyRotation();

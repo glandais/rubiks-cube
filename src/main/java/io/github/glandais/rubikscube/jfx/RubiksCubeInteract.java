@@ -1,5 +1,7 @@
 package io.github.glandais.rubikscube.jfx;
 
+import io.github.glandais.rubikscube.jfx.model.FaceletDirectionEnum;
+import io.github.glandais.rubikscube.jfx.model.FaceletRotationEnum;
 import io.github.glandais.rubikscube.jfx.scene.Facelet;
 import io.github.glandais.rubikscube.jfx.scene.FaceletBox;
 import io.github.glandais.rubikscube.jfx.scene.FaceletClicked;
@@ -9,14 +11,10 @@ import io.github.glandais.rubikscube.jfx.scene.RubiksCubeView;
 import io.github.glandais.rubikscube.model.Cube3Model;
 import io.github.glandais.rubikscube.model.SideEnum;
 import io.github.glandais.rubikscube.model.rotation.RotationEnum;
-import io.github.glandais.rubikscube.model.rotation.gui.FaceletDirectionEnum;
-import io.github.glandais.rubikscube.model.rotation.gui.FaceletRotationEnum;
 import io.github.glandais.rubikscube.model.view.CubeVisibleOrientation;
+import io.github.glandais.rubikscube.solver.DummySolver;
+import io.github.glandais.rubikscube.solver.DummySolverInstance;
 import io.github.glandais.rubikscube.solver.Scrambler;
-import io.github.glandais.rubikscube.solver.Solver;
-import io.github.glandais.rubikscube.solver.dummy.DummySolver;
-import io.github.glandais.rubikscube.solver.dummy.DummySolverInstance;
-import io.github.glandais.rubikscube.solver.tnoodle.TNoodleSolver;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -39,7 +37,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static io.github.glandais.rubikscube.model.rotation.RotationEnum.B;
@@ -66,7 +63,6 @@ import static javafx.scene.transform.Rotate.Z_AXIS;
 
 public class RubiksCubeInteract {
     private final Cube3Model cube3Model = new Cube3Model();
-    private final TNoodleSolver tnoodleSolver = new TNoodleSolver();
     private final DummySolver dummySolver = new DummySolver();
 
     private final List<RotationPlayModel> rotationPlayModels = new ArrayList<>();
@@ -82,6 +78,8 @@ public class RubiksCubeInteract {
     private FaceletClicked draggedInitial;
     private RotationDraggedModel rotationDraggedModel;
     private Point2D rotationDraggedVector;
+    private double rotationDraggedStartX;
+    private double rotationDraggedStartY;
 
     private int historyIndex;
     private List<String> history;
@@ -100,7 +98,6 @@ public class RubiksCubeInteract {
         // The main game loop
         Timeline gameLoop = new Timeline();
         gameLoop.setCycleCount(Animation.INDEFINITE);
-        AtomicLong last = new AtomicLong(System.currentTimeMillis());
         KeyFrame keyFrame = new KeyFrame(
                 Duration.seconds(1.0f / 60.0f), // 60 FPS
                 ae -> update());
@@ -185,9 +182,6 @@ public class RubiksCubeInteract {
         if (ke.getCode() == KeyCode.F2) {
             scramble();
         }
-        if (ke.getCode() == KeyCode.F3) {
-            solveTNoodle();
-        }
 //        System.out.println("keyReleased " + ke);
     }
 
@@ -228,7 +222,7 @@ public class RubiksCubeInteract {
             if (draggedInitial == null) {
                 rotateView(dySinceLast, dxSinceLast);
             } else {
-                if (rotationDraggedModel == null && Math.hypot(dx, dy) > 4.0) {
+                if (rotationDraggedModel == null && Math.hypot(dx, dy) > 5.0) {
                     PickResult pickResult = event.getPickResult();
                     Node intersectedNode = pickResult.getIntersectedNode();
                     if (intersectedNode instanceof FaceletBox faceletBox) {
@@ -239,20 +233,18 @@ public class RubiksCubeInteract {
                             RotationEnum rotation = getRotation(draggedInitial, point2D);
                             if (rotation != null) {
                                 rotationDraggedModel = new RotationDraggedModel(view.getCube3(), rotation);
-                                rotationDraggedVector = new Point2D(dxSinceLast, dySinceLast).normalize();
-                            } else {
-                                draggedInitial = null;
+                                rotationDraggedVector = new Point2D(dx, dy).normalize();
+                                rotationDraggedStartX = sceneX;
+                                rotationDraggedStartY = sceneY;
                             }
                         }
-                    } else {
-                        draggedInitial = null;
                     }
                 }
 
                 if (rotationDraggedModel != null) {
-                    double ratio = rotationDraggedVector.dotProduct(
-                            new Point2D(sceneX - initDraggedX, sceneY - initDraggedY)
-                    ) / 50.0;
+                    double ratio = (rotationDraggedVector.dotProduct(
+                            new Point2D(sceneX - rotationDraggedStartX, sceneY - rotationDraggedStartY)
+                    )) / 50.0;
                     rotationDraggedModel.rotate(ratio);
                 }
             }
@@ -331,19 +323,16 @@ public class RubiksCubeInteract {
     }
 
     private RotationEnum getRotation(FaceletClicked draggedInitial, Point2D point2D) {
-        FaceletDirectionEnum direction;
-        if (Math.abs(point2D.getX()) > Math.abs(point2D.getY())) {
-            if (point2D.getX() > 0) {
-                direction = FaceletDirectionEnum.RIGHT;
-            } else {
-                direction = FaceletDirectionEnum.LEFT;
-            }
-        } else {
-            if (point2D.getY() > 0) {
-                direction = FaceletDirectionEnum.UP;
-            } else {
-                direction = FaceletDirectionEnum.DOWN;
-            }
+        FaceletDirectionEnum direction = null;
+        double angle = Math.atan2(point2D.getX(), point2D.getY()) * 180.0 / Math.PI;
+        if (-30 < angle && angle < 30) {
+            direction = FaceletDirectionEnum.UP;
+        } else if (60 < angle && angle < 120) {
+            direction = FaceletDirectionEnum.RIGHT;
+        } else if (-120 < angle && angle < -60) {
+            direction = FaceletDirectionEnum.LEFT;
+        } else if (angle < -150 || angle > 150) {
+            direction = FaceletDirectionEnum.DOWN;
         }
         return FaceletRotationEnum.getRotation(draggedInitial.facelet().getCurrentPosition(), direction);
     }
@@ -402,7 +391,6 @@ public class RubiksCubeInteract {
             }
             draggedInitial = null;
             rotationDraggedModel = null;
-            rotationDraggedVector = null;
         }
     }
 
@@ -456,13 +444,8 @@ public class RubiksCubeInteract {
     }
 
     @Synchronized
-    public void solveTNoodle() {
-        doSolve(cube3Model.getNotation(), tnoodleSolver, 200);
-    }
-
-    @Synchronized
     public void solveDummy() {
-        doSolve(cube3Model.getNotation(), dummySolver, 50);
+        doSolve(cube3Model.getNotation());
     }
 
     private String doScramble(int duration) {
@@ -473,10 +456,10 @@ public class RubiksCubeInteract {
         return moves;
     }
 
-    private void doSolve(String moves, Solver solver, int duration) {
+    private void doSolve(String moves) {
         clearRotationModels();
-        String solution = solver.solve(moves);
-        applyMoves(solution, false, true, duration);
+        String solution = dummySolver.solve(moves);
+        applyMoves(solution, false, true, 50);
     }
 
     @Synchronized

@@ -1,10 +1,7 @@
-package io.github.glandais.rubikscube.solver.dummy;
+package io.github.glandais.rubikscube.solver;
 
-import io.github.glandais.rubikscube.solver.Solver;
+public class DummySolver {
 
-public class DummySolver implements Solver {
-
-    @Override
     public String solve(String state) {
         DummySolverInstance dummySolverInstance = new DummySolverInstance(state);
         dummySolverInstance.solve();

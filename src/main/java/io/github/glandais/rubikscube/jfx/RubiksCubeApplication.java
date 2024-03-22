@@ -28,8 +28,8 @@ public class RubiksCubeApplication extends Application {
     public void start(Stage primaryStage) {
         GridPane gridPane = new GridPane();
 
-        int width = 800;
-        int height = 600;
+        int width = 1024;
+        int height = 900;
 
         rubiksCubeInteract.init();
 
@@ -140,26 +140,24 @@ public class RubiksCubeApplication extends Application {
         gridPane.add(new RotationButton(RotationEnum.D_DOUBLE), 2, 3);
         gridPane.add(new RotationButton(RotationEnum.D_REVERSE), 3, 3);
 
-        Button undo = new ActionButton("Undo", RubiksCubeApplication.rubiksCubeInteract::undo);
+        Button undo = new ActionButton("Undo", "Undo last action group", RubiksCubeApplication.rubiksCubeInteract::undo);
         gridPane.add(undo, 5, 0);
-        Button redo = new ActionButton("Redo", RubiksCubeApplication.rubiksCubeInteract::redo);
+        Button redo = new ActionButton("Redo", "Redo last action group", RubiksCubeApplication.rubiksCubeInteract::redo);
         gridPane.add(redo, 5, 1);
 
-        Button reset = new ActionButton("Reset", RubiksCubeApplication.rubiksCubeInteract::reset);
+        Button reset = new ActionButton("Reset", "Reset to a solved cube", RubiksCubeApplication.rubiksCubeInteract::reset);
         gridPane.add(reset, 6, 0);
-        Button scramble = new ActionButton("Scramble", RubiksCubeApplication.rubiksCubeInteract::scramble);
+        Button scramble = new ActionButton("Scramble", "Randomize cube", RubiksCubeApplication.rubiksCubeInteract::scramble);
         gridPane.add(scramble, 6, 1);
-        Button solveDummy = new ActionButton("Solve", RubiksCubeApplication.rubiksCubeInteract::solveDummy);
+        Button solveDummy = new ActionButton("Solve", "Solve cube", RubiksCubeApplication.rubiksCubeInteract::solveDummy);
         gridPane.add(solveDummy, 6, 2);
-        Button solve = new ActionButton("Solve min2phase", RubiksCubeApplication.rubiksCubeInteract::solveTNoodle);
-        gridPane.add(solve, 6, 3);
 
         return List.of(gridPane);
     }
 
     private List<Node> getBottom() {
         return List.of(
-                new ActionButton("Reset view", rubiksCubeInteract::resetView),
+                new ActionButton("Reset view", "Reset to initial view", rubiksCubeInteract::resetView),
                 new Separator(),
                 rubiksCubeInteract.getXRotationLabel(),
                 rubiksCubeInteract.getYRotationLabel()
@@ -168,18 +166,22 @@ public class RubiksCubeApplication extends Application {
 
     private List<Node> getLeft() {
         return List.of(
-                new ActionButton("Phase 1", rubiksCubeInteract::solvePhase1),
-                new ActionButton("Phase 2", rubiksCubeInteract::solvePhase2),
-                new ActionButton("Phase 3", rubiksCubeInteract::solvePhase3),
-                new ActionButton("Phase 4", rubiksCubeInteract::solvePhase4),
-                new ActionButton("Phase 5", rubiksCubeInteract::solvePhase5),
-                new ActionButton("Phase 6", rubiksCubeInteract::solvePhase6),
-                new ActionButton("Phase 7", rubiksCubeInteract::solvePhase7)
+                new Label("Step by step solving"),
+                new Separator(),
+                new ActionButton("Phase 1", "Phase 1 solve", rubiksCubeInteract::solvePhase1),
+                new ActionButton("Phase 2", "Phase 2 solve", rubiksCubeInteract::solvePhase2),
+                new ActionButton("Phase 3", "Phase 3 solve", rubiksCubeInteract::solvePhase3),
+                new ActionButton("Phase 4", "Phase 4 solve", rubiksCubeInteract::solvePhase4),
+                new ActionButton("Phase 5", "Phase 5 solve", rubiksCubeInteract::solvePhase5),
+                new ActionButton("Phase 6", "Phase 6 solve", rubiksCubeInteract::solvePhase6),
+                new ActionButton("Phase 7", "Phase 7 solve", rubiksCubeInteract::solvePhase7)
         );
     }
 
     private List<Node> getRight() {
         return List.of(
+                new Label("Standard moves"),
+                new Separator(),
                 new Label("Phase 1"),
                 new MovesButton("From top", "F U' R U"),
                 new MovesButton("From bottom", "F' U' R U"),

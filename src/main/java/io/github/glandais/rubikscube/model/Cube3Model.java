@@ -71,9 +71,7 @@ public class Cube3Model {
         moveList.add(rotation);
         byte[] newPosition = RotationMoves.NEW_POSITIONS[rotation.ordinal()];
         byte[] oldFacelets = new byte[48];
-        for (int i = 0; i < 48; i++) {
-            oldFacelets[i] = facelets[i];
-        }
+        System.arraycopy(facelets, 0, oldFacelets, 0, 48);
         for (byte i = 0; i < 48; i++) {
             this.facelets[newPosition[i]] = oldFacelets[i];
         }

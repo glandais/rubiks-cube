@@ -1,7 +1,6 @@
 package io.github.glandais.rubikscube.model;
 
 import org.fusesource.jansi.Ansi;
-import org.fusesource.jansi.AnsiConsole;
 
 public class Colors {
 

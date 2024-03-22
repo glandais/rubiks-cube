@@ -1,4 +1,4 @@
-package io.github.glandais.rubikscube.solver.dummy;
+package io.github.glandais.rubikscube.solver;
 
 import io.github.glandais.rubikscube.model.CornerEnum;
 import io.github.glandais.rubikscube.model.Cube3Model;

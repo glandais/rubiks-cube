@@ -13,6 +13,8 @@ import lombok.Getter;
 
 @Getter
 public class Facelet extends Group {
+    private static final Color HIDDEN_FACE = Color.hsb(0, 0, 0.2);
+    public static final Color SPECULAR_COLOR = Color.hsb(0, 0, 0.3);
     private final SideEnum sideEnum;
     private final Cube cube;
 
@@ -44,12 +46,14 @@ public class Facelet extends Group {
                 (sideEnum == SideEnum.R && cube.getX() == 1) ||
                 (sideEnum == SideEnum.L && cube.getX() == -1)
         ) {
-            addFace(w * 0.95, h * 0.95, d * 0.95, dc * 0.5, true);
+            addFace(w * 0.95, h * 0.95, d * 0.95, dc * 0.5, sideEnum.getColor());
+        } else {
+            addFace(w * 0.95, h * 0.95, d * 0.95, dc * 0.5, HIDDEN_FACE);
         }
-        addFace(w, h, d, dc * 0.49, false);
+        addFace(w, h, d, dc * 0.49, Color.BLACK);
     }
 
-    private void addFace(double w, double h, double d, double dc, boolean trueColor) {
+    private void addFace(double w, double h, double d, double dc, Color color) {
         Box face = new FaceletBox(this, 2 * w, 2 * h, 2 * d);
         Translate translate;
         if (w == 0) {
@@ -60,24 +64,20 @@ public class Facelet extends Group {
             translate = new Translate(0, 0, 2 * dc);
         }
         face.getTransforms().add(translate);
-        if (trueColor) {
-            PhongMaterial material = new PhongMaterial();
-            material.setDiffuseColor(sideEnum.getDarkColor());
-            material.setSpecularColor(sideEnum.getColor());
-            face.setMaterial(material);
+        PhongMaterial material = new PhongMaterial();
+        material.setDiffuseColor(color);
+        material.setSpecularColor(SPECULAR_COLOR);
+        face.setMaterial(material);
 
-            this.currentPosition3D = new Point3D(
-                    cube.getX() + translate.getX(),
-                    cube.getY() + translate.getY(),
-                    cube.getZ() + translate.getZ()
-            );
-            Facelet3DEnum facelet3DEnum = Facelet3DEnum.of(this.currentPosition3D);
-            if (facelet3DEnum != null) {
-                this.initialPosition = facelet3DEnum.getFaceletEnum();
-                this.currentPosition = this.initialPosition;
-            }
-        } else {
-            face.setMaterial(new PhongMaterial(Color.BLACK));
+        this.currentPosition3D = new Point3D(
+                cube.getX() + translate.getX(),
+                cube.getY() + translate.getY(),
+                cube.getZ() + translate.getZ()
+        );
+        Facelet3DEnum facelet3DEnum = Facelet3DEnum.of(this.currentPosition3D);
+        if (facelet3DEnum != null) {
+            this.initialPosition = facelet3DEnum.getFaceletEnum();
+            this.currentPosition = this.initialPosition;
         }
         getChildren().add(face);
     }

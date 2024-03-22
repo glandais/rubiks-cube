@@ -1,13 +1,19 @@
 package io.github.glandais.rubikscube.jfx.scene;
 
 import javafx.geometry.Point3D;
+import javafx.scene.AmbientLight;
+import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
+import javafx.scene.PointLight;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import lombok.Getter;
+
+import java.util.GregorianCalendar;
 
 import static javafx.scene.transform.Rotate.X_AXIS;
 import static javafx.scene.transform.Rotate.Y_AXIS;
@@ -26,7 +32,13 @@ public class RubiksCubeView {
     }
 
     public SubScene buildSubScene() {
-        SubScene subScene = new SubScene(cube3, 800, 600, true, SceneAntialiasing.BALANCED);
+        AmbientLight ambientLight = new AmbientLight();
+        ambientLight.setColor(new Color(0.5, 0.5, 0.5, 1));
+        PointLight pointLight = new PointLight();
+        pointLight.setColor(new Color(0.5, 0.5, 0.5, 1));
+        pointLight.getTransforms().add(new Translate(0, 0, -20));
+        Group group = new Group(cube3, ambientLight, pointLight);
+        SubScene subScene = new SubScene(group, 800, 600, true, SceneAntialiasing.BALANCED);
         subScene.setCamera(camera);
         subScene.setFill(Color.CADETBLUE);
         return subScene;

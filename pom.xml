@@ -13,13 +13,9 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <lombok.version>1.18.30</lombok.version>
+        <lombok.version>1.18.32</lombok.version>
         <jansi.version>2.4.1</jansi.version>
-        <jackson-databind.version>2.17.0</jackson-databind.version>
-        <picocli.version>4.7.5</picocli.version>
         <javafx.version>21.0.2</javafx.version>
-        <caffeine.version>3.1.8</caffeine.version>
-        <tnoodle.version>0.19.2</tnoodle.version>
     </properties>
 
     <dependencies>
@@ -35,11 +31,6 @@
             <version>${jansi.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson-databind.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
@@ -49,34 +40,6 @@
             <artifactId>javafx-graphics</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-        <dependency>
-            <groupId>info.picocli</groupId>
-            <artifactId>picocli</artifactId>
-            <version>${picocli.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
-            <version>${caffeine.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>info.picocli</groupId>
-            <artifactId>picocli-codegen</artifactId>
-            <version>${picocli.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.worldcubeassociation.tnoodle</groupId>
-            <artifactId>scrambler-min2phase</artifactId>
-            <version>${tnoodle.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.worldcubeassociation.tnoodle</groupId>
-            <artifactId>lib-scrambles</artifactId>
-            <version>${tnoodle.version}</version>
-        </dependency>
-
     </dependencies>
 
     <build>

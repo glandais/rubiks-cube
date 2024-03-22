@@ -10,7 +10,7 @@ public class Facelet3DEnumGenerator {
             for (int j = 0; j < 3; j++) {
                 for (int i = 0; i < 3; i++) {
                     if (k != 4) {
-                        String faceleteEnum = sideEnum.name() + k;
+                        String faceletEnum = sideEnum.name() + k;
                         int x = 0;
                         int y = 0;
                         int z = 0;
@@ -46,7 +46,7 @@ public class Facelet3DEnumGenerator {
                                 z = i - 1;
                             }
                         }
-                        System.out.println(faceleteEnum + "(FaceletEnum." + faceleteEnum + "," + x + "," + y + "," + z + "),");
+                        System.out.println(faceletEnum + "(FaceletEnum." + faceletEnum + "," + x + "," + y + "," + z + "),");
                     }
                     k++;
                 }

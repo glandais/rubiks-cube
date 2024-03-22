@@ -1,4 +1,4 @@
-package io.github.glandais.rubikscube.model.rotation.gui;
+package io.github.glandais.rubikscube.jfx.model;
 
 import io.github.glandais.rubikscube.model.FaceletEnum;
 import io.github.glandais.rubikscube.model.rotation.RotationEnum;
@@ -8,6 +8,10 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.github.glandais.rubikscube.jfx.model.FaceletDirectionEnum.DOWN;
+import static io.github.glandais.rubikscube.jfx.model.FaceletDirectionEnum.LEFT;
+import static io.github.glandais.rubikscube.jfx.model.FaceletDirectionEnum.RIGHT;
+import static io.github.glandais.rubikscube.jfx.model.FaceletDirectionEnum.UP;
 import static io.github.glandais.rubikscube.model.FaceletEnum.B0;
 import static io.github.glandais.rubikscube.model.FaceletEnum.B1;
 import static io.github.glandais.rubikscube.model.FaceletEnum.B2;
@@ -74,10 +78,6 @@ import static io.github.glandais.rubikscube.model.rotation.RotationEnum.R_REVERS
 import static io.github.glandais.rubikscube.model.rotation.RotationEnum.U;
 import static io.github.glandais.rubikscube.model.rotation.RotationEnum.U_DOUBLE;
 import static io.github.glandais.rubikscube.model.rotation.RotationEnum.U_REVERSE;
-import static io.github.glandais.rubikscube.model.rotation.gui.FaceletDirectionEnum.DOWN;
-import static io.github.glandais.rubikscube.model.rotation.gui.FaceletDirectionEnum.LEFT;
-import static io.github.glandais.rubikscube.model.rotation.gui.FaceletDirectionEnum.RIGHT;
-import static io.github.glandais.rubikscube.model.rotation.gui.FaceletDirectionEnum.UP;
 
 @UtilityClass
 public class FaceletRotationEnum {
@@ -108,8 +108,8 @@ public class FaceletRotationEnum {
                 ),
                 List.of(
                         F0, F3, F6,
-                        U0, U3, U5,
-                        D0, D3, D5
+                        U0, U3, U6,
+                        D0, D3, D6
                 ),
                 List.of(),
                 List.of()
@@ -151,7 +151,7 @@ public class FaceletRotationEnum {
     }
 
     public static RotationEnum getRotation(FaceletEnum facelet, FaceletDirectionEnum direction) {
-        if (facelet == null) {
+        if (facelet == null || direction == null) {
             return null;
         }
         Map<FaceletDirectionEnum, RotationEnum> map = rotations.get(facelet);
