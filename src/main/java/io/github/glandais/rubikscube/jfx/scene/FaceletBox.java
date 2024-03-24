@@ -7,9 +7,11 @@ import lombok.Getter;
 public class FaceletBox extends Box {
 
     private final Facelet facelet;
+    private final FaceletTypeEnum faceletType;
 
-    public FaceletBox(Facelet facelet, double width, double height, double depth) {
+    public FaceletBox(Facelet facelet, FaceletTypeEnum faceletType, double width, double height, double depth) {
         super(width, height, depth);
         this.facelet = facelet;
+        this.faceletType = faceletType;
     }
 }

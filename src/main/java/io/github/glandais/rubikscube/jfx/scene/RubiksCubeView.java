@@ -3,7 +3,6 @@ package io.github.glandais.rubikscube.jfx.scene;
 import javafx.geometry.Point3D;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.PointLight;
 import javafx.scene.SceneAntialiasing;
@@ -13,22 +12,14 @@ import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import lombok.Getter;
 
-import java.util.GregorianCalendar;
-
-import static javafx.scene.transform.Rotate.X_AXIS;
-import static javafx.scene.transform.Rotate.Y_AXIS;
-
 public class RubiksCubeView {
     private final PerspectiveCamera camera = new PerspectiveCamera(true);
     private double cameraTranslation;
     @Getter
     private final Cube3 cube3 = new Cube3();
-    private final Rotate rotateX = new Rotate(0, X_AXIS);
-    private final Rotate rotateY = new Rotate(0, Y_AXIS);
 
     public RubiksCubeView() {
         super();
-        cube3.getTransforms().setAll(rotateX, rotateY);
     }
 
     public SubScene buildSubScene() {
@@ -45,10 +36,9 @@ public class RubiksCubeView {
     }
 
     public void resetView() {
-        cameraTranslation = 30.0;
+        cameraTranslation = 23.0;
         updateCamera();
-        rotateX.setAngle(200);
-        rotateY.setAngle(340);
+        cube3.resetView();
     }
 
     public void onZoom(double ratio) {
@@ -86,32 +76,22 @@ public class RubiksCubeView {
     }
 
     public void rotate(double dx, double dy) {
-        double angleX = mod360(rotateX.getAngle() + dx);
-        double angleY;
-        if (angleX >= 90 && angleX <= 270) {
-            angleY = mod360(rotateY.getAngle() + dy);
-        } else {
-            angleY = mod360(rotateY.getAngle() - dy);
-        }
-        rotateX.setAngle(angleX);
-        rotateY.setAngle(angleY);
+        cube3.rotate(dx, dy);
     }
 
     public double getAngleX() {
-        return rotateX.getAngle();
+        return cube3.getAngleX();
     }
 
     public double getAngleY() {
-        return rotateY.getAngle();
+        return cube3.getAngleY();
     }
 
-    private double mod360(double a) {
-        while (a < 0) {
-            a = a + 360.0;
-        }
-        while (a >= 360) {
-            a = a - 360.0;
-        }
-        return a;
+    public boolean explode(long elapsed) {
+        return cube3.explode(elapsed);
+    }
+
+    public void initExplode() {
+        cube3.initExplode();
     }
 }

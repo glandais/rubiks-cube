@@ -53,37 +53,6 @@ public class RubiksCubeApplication extends Application {
         tbRight.getItems().addAll(getRight());
         gridPane.add(tbRight, 2, 1);
 
-        /*
-        GridPane scenes = new GridPane();
-        scenes.setOnMousePressed(RubiksCubeApplication.rubiksCubeInteract::onMousePressed);
-        scenes.setOnMouseDragged(RubiksCubeApplication.rubiksCubeInteract::onMouseDragged);
-        scenes.setOnMouseClicked(RubiksCubeApplication.rubiksCubeInteract::onMouseClicked);
-        scenes.setOnScroll(RubiksCubeApplication.rubiksCubeInteract::onScroll);
-        List<SubScene> subScenes = new ArrayList<>();
-        SubScene front = RubiksCubeApplication.rubiksCubeInteract.buildSubScene(RubiksCubeViewEnum.F);
-        scenes.add(front, 0, 0);
-        subScenes.add(front);
-        SubScene back = RubiksCubeApplication.rubiksCubeInteract.buildSubScene(RubiksCubeViewEnum.B);
-        scenes.add(back, 1, 0);
-        subScenes.add(back);
-         */
-        /*
-        for (RubiksCubeViewEnum rubiksCubeViewEnum : RubiksCubeViewEnum.values()) {
-            SubScene subScene = RubiksCubeApplication.rubiksCubeInteract.buildSubScene(rubiksCubeViewEnum);
-            switch (rubiksCubeViewEnum) {
-                case F -> scenes.add(subScene, 1, 1);
-                case B -> scenes.add(subScene, 3, 1);
-                case U -> scenes.add(subScene, 1, 0);
-                case D -> scenes.add(subScene, 1, 2);
-                case R -> scenes.add(subScene, 2, 1);
-                case L -> scenes.add(subScene, 0, 1);
-            }
-            subScenes.add(subScene);
-        }
-        for (SubScene subScene : subScenes) {
-            bindSize(subScene, gridPane, tbLeft, tbRight, tbTop, tbBottom);
-        }
-         */
         SubScene front = RubiksCubeApplication.rubiksCubeInteract.buildSubScene();
         front.setOnMousePressed(RubiksCubeApplication.rubiksCubeInteract::onMousePressed);
         front.setOnMouseDragged(RubiksCubeApplication.rubiksCubeInteract::onMouseDragged);
@@ -151,6 +120,8 @@ public class RubiksCubeApplication extends Application {
         gridPane.add(scramble, 6, 1);
         Button solveDummy = new ActionButton("Solve", "Solve cube", RubiksCubeApplication.rubiksCubeInteract::solveDummy);
         gridPane.add(solveDummy, 6, 2);
+        Button explode = new ActionButton("Explode", "Explode cube", RubiksCubeApplication.rubiksCubeInteract::explode);
+        gridPane.add(explode, 7, 0);
 
         return List.of(gridPane);
     }
@@ -168,13 +139,13 @@ public class RubiksCubeApplication extends Application {
         return List.of(
                 new Label("Step by step solving"),
                 new Separator(),
-                new ActionButton("Phase 1", "Phase 1 solve", rubiksCubeInteract::solvePhase1),
-                new ActionButton("Phase 2", "Phase 2 solve", rubiksCubeInteract::solvePhase2),
-                new ActionButton("Phase 3", "Phase 3 solve", rubiksCubeInteract::solvePhase3),
-                new ActionButton("Phase 4", "Phase 4 solve", rubiksCubeInteract::solvePhase4),
-                new ActionButton("Phase 5", "Phase 5 solve", rubiksCubeInteract::solvePhase5),
-                new ActionButton("Phase 6", "Phase 6 solve", rubiksCubeInteract::solvePhase6),
-                new ActionButton("Phase 7", "Phase 7 solve", rubiksCubeInteract::solvePhase7)
+                new ActionButton("White edges", "Phase 1", rubiksCubeInteract::solvePhase1),
+                new ActionButton("First layer", "Phase 2", rubiksCubeInteract::solvePhase2),
+                new ActionButton("Second layer", "Phase 3", rubiksCubeInteract::solvePhase3),
+                new ActionButton("Yellow cross", "Phase 4", rubiksCubeInteract::solvePhase4),
+                new ActionButton("Yellow edges", "Phase 5", rubiksCubeInteract::solvePhase5),
+                new ActionButton("Yellow corners", "Phase 6", rubiksCubeInteract::solvePhase6),
+                new ActionButton("Orient yellow corners", "Phase 7", rubiksCubeInteract::solvePhase7)
         );
     }
 
@@ -182,35 +153,35 @@ public class RubiksCubeApplication extends Application {
         return List.of(
                 new Label("Standard moves"),
                 new Separator(),
-                new Label("Phase 1"),
+                new LabelTooltip("White edges", "Phase 1"),
                 new MovesButton("From top", "F U' R U"),
                 new MovesButton("From bottom", "F' U' R U"),
                 new MovesButton("From right", "U' R U"),
                 new MovesButton("From left", "U L' U'"),
                 new Separator(),
-                new Label("Phase 2"),
+                new LabelTooltip("First layer", "Phase 2"),
                 new MovesButton("From right", "R' D' R"),
                 new MovesButton("From front", "F D F'"),
                 new MovesButton("From down", "R2 D' R2 D R2"),
                 new MovesButton("Left to down", "L D L'"),
                 new Separator(),
-                new Label("Phase 3"),
+                new LabelTooltip("Second layer", "Phase 3"),
                 new MovesButton("Right", "U R U' R' U' F' U F"),
                 new MovesButton("Left", "U' L' U L U F U' F'"),
                 new MovesButton("Wrong orient", "U R U' R' U' F' U F U2 U R U' R' U' F' U F"),
                 new Separator(),
-                new Label("Phase 4"),
+                new LabelTooltip("Yellow cross", "Phase 4"),
                 new MovesButton("Fix", "F R U R' U' F'"),
                 new MovesButton("Reversed", "F U R U' R' F'"),
                 new Separator(),
-                new Label("Phase 5"),
+                new LabelTooltip("Yellow edges", "Phase 5"),
                 new MovesButton("Switch", "R U R' U R U2 R' U"),
                 new MovesButton("Opposite", "U R U R' U R U2 R' U y2 R U R' U R U2 R' U"),
                 new Separator(),
-                new Label("Phase 6"),
+                new LabelTooltip("Yellow corners", "Phase 6"),
                 new MovesButton("Swap", "U R U' L' U R' U' L"),
                 new Separator(),
-                new Label("Phase 7"),
+                new LabelTooltip("Orient yellow corners", "Phase 7"),
                 new MovesButton("Move", "R' D' R D"),
                 new Separator()
         );

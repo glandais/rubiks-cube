@@ -96,4 +96,12 @@ public class Cube3Model {
         return RotatedCubes.getRealPosition(view, position);
     }
 
+    public boolean isSolved() {
+        for (byte i = 0; i < 48; i++) {
+            if (this.facelets[i] != i) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

@@ -6,6 +6,7 @@ import io.github.glandais.rubikscube.jfx.scene.Facelet;
 import io.github.glandais.rubikscube.jfx.scene.FaceletBox;
 import io.github.glandais.rubikscube.jfx.scene.FaceletClicked;
 import io.github.glandais.rubikscube.jfx.scene.RotationDraggedModel;
+import io.github.glandais.rubikscube.jfx.scene.RotationModel;
 import io.github.glandais.rubikscube.jfx.scene.RotationPlayModel;
 import io.github.glandais.rubikscube.jfx.scene.RubiksCubeView;
 import io.github.glandais.rubikscube.model.Cube3Model;
@@ -65,7 +66,7 @@ public class RubiksCubeInteract {
     private final Cube3Model cube3Model = new Cube3Model();
     private final DummySolver dummySolver = new DummySolver();
 
-    private final List<RotationPlayModel> rotationPlayModels = new ArrayList<>();
+    private final List<RotationModel> rotationModels = new ArrayList<>();
     private RubiksCubeView view;
     @Getter
     private Label xRotationLabel;
@@ -83,6 +84,9 @@ public class RubiksCubeInteract {
 
     private int historyIndex;
     private List<String> history;
+
+    private boolean exploding = false;
+    private long explodingStart;
 
     @Synchronized
     public void init() {
@@ -189,7 +193,7 @@ public class RubiksCubeInteract {
     public void onMousePressed(MouseEvent event) {
         if (event.getButton() == MouseButton.PRIMARY) {
             draggedInitial = null;
-            if (rotationPlayModels.isEmpty()) {
+            if (rotationModels.isEmpty() && !exploding) {
                 PickResult pickResult = event.getPickResult();
                 Node intersectedNode = pickResult.getIntersectedNode();
                 if (intersectedNode instanceof FaceletBox faceletBox) {
@@ -232,7 +236,7 @@ public class RubiksCubeInteract {
                             Point2D point2D = projected.subtract(draggedInitial.intersectedPoint());
                             RotationEnum rotation = getRotation(draggedInitial, point2D);
                             if (rotation != null) {
-                                rotationDraggedModel = new RotationDraggedModel(view.getCube3(), rotation);
+                                rotationDraggedModel = new RotationDraggedModel(view.getCube3(), rotation, 300);
                                 rotationDraggedVector = new Point2D(dx, dy).normalize();
                                 rotationDraggedStartX = sceneX;
                                 rotationDraggedStartY = sceneY;
@@ -346,27 +350,16 @@ public class RubiksCubeInteract {
             redo();
         } else if (event.getButton() == MouseButton.PRIMARY) {
             if (rotationDraggedModel != null) {
-                double currentAngle = rotationDraggedModel.getCurrentAngle();
+                double targetAngle = 90 * Math.round(rotationDraggedModel.getCurrentAngle() / 90.0);
+                double currentAngle = targetAngle;
                 while (currentAngle < -180) {
                     currentAngle = currentAngle + 360;
                 }
                 while (currentAngle >= 180) {
                     currentAngle = currentAngle - 360;
                 }
-                if (currentAngle < -135) {
-                    currentAngle = 180;
-                } else if (currentAngle < -45) {
-                    currentAngle = -90;
-                } else if (currentAngle < 45) {
-                    currentAngle = 0;
-                } else if (currentAngle < 135) {
-                    currentAngle = 90;
-                } else {
-                    currentAngle = 180;
-                }
-                rotationDraggedModel.cancel();
+                RotationEnum rotationEnum = null;
                 if (currentAngle != 0) {
-                    RotationEnum rotationEnum = null;
                     for (RotationEnum value : RotationEnum.values()) {
                         if (
                                 value.getAxis().equals(rotationDraggedModel.getAxis()) &&
@@ -384,10 +377,15 @@ public class RubiksCubeInteract {
                             rotationEnum = value;
                         }
                     }
-                    if (rotationEnum != null) {
-                        applyMoves(rotationEnum.getNotation(), false, true, 0);
-                    }
                 }
+
+                rotationDraggedModel.released(rotationEnum, targetAngle);
+                if (rotationEnum != null) {
+                    historyIndex++;
+                    history = history.subList(0, historyIndex);
+                    history.add(rotationEnum.getNotation());
+                }
+                rotationModels.add(rotationDraggedModel);
             }
             draggedInitial = null;
             rotationDraggedModel = null;
@@ -413,12 +411,17 @@ public class RubiksCubeInteract {
 
     @Synchronized
     public void resetView() {
-        view.resetView();
-        rotateView(0, 0);
+        if (!exploding) {
+            view.resetView();
+            rotateView(0, 0);
+        }
     }
 
     @Synchronized
     public void reset() {
+        if (exploding) {
+            return;
+        }
         clearRotationModels();
         view.reset();
         cube3Model.reset();
@@ -427,24 +430,33 @@ public class RubiksCubeInteract {
     }
 
     private void clearRotationModels() {
-        if (!rotationPlayModels.isEmpty()) {
-            rotationPlayModels.getFirst().cancel();
+        if (!rotationModels.isEmpty()) {
+            rotationModels.getFirst().cancel();
         }
-        rotationPlayModels.clear();
+        rotationModels.clear();
     }
 
     @Synchronized
     public void rotateUser(RotationEnum rotation) {
+        if (exploding) {
+            return;
+        }
         applyMoves(rotation.getNotation(), true, true, 100);
     }
 
     @Synchronized
     public void scramble() {
+        if (exploding) {
+            return;
+        }
         doScramble(50);
     }
 
     @Synchronized
     public void solveDummy() {
+        if (exploding) {
+            return;
+        }
         doSolve(cube3Model.getNotation());
     }
 
@@ -452,7 +464,7 @@ public class RubiksCubeInteract {
         reset();
         String moves = Scrambler.scramble();
         System.out.println("Scramble : " + moves);
-        applyMoves(moves, false, true, duration);
+        applyMoves(moves, false, false, duration);
         return moves;
     }
 
@@ -463,7 +475,10 @@ public class RubiksCubeInteract {
     }
 
     @Synchronized
-    public void applyMoves(String moves, boolean fromView, boolean addHistory, int duration) {
+    public void applyMoves(String moves, boolean fromView, boolean addHistory, int duration90) {
+        if (exploding) {
+            return;
+        }
         CubeVisibleOrientation cubeVisibleOrientation = null;
         if (fromView) {
             cubeVisibleOrientation = getCubeVisibleOrientation();
@@ -473,9 +488,8 @@ public class RubiksCubeInteract {
             return;
         }
         for (RotationEnum rotation : rotationEnums) {
-            long realDuration = Math.round(duration * Math.abs(rotation.getAngle()) / 90);
-            RotationPlayModel rotationModel = new RotationPlayModel(view.getCube3(), rotation, realDuration);
-            rotationPlayModels.add(rotationModel);
+            RotationPlayModel rotationModel = new RotationPlayModel(view.getCube3(), rotation, duration90);
+            rotationModels.add(rotationModel);
         }
         if (addHistory) {
             historyIndex++;
@@ -486,11 +500,21 @@ public class RubiksCubeInteract {
 
     @Synchronized
     private void update() {
-        if (!rotationPlayModels.isEmpty()) {
-            RotationPlayModel rotationPlayModel = rotationPlayModels.getFirst();
-            if (rotationPlayModel.tick()) {
-                cube3Model.apply(rotationPlayModel.getRotation(), false);
-                rotationPlayModels.removeFirst();
+        if (exploding) {
+            if (view.explode(System.currentTimeMillis() - explodingStart)) {
+                exploding = false;
+            }
+        } else if (!rotationModels.isEmpty()) {
+            RotationModel rotationModel = rotationModels.getFirst();
+            if (rotationModel.tick()) {
+                RotationEnum rotation = rotationModel.getRotation();
+                if (rotation != null) {
+                    cube3Model.apply(rotation, false);
+                }
+                rotationModels.removeFirst();
+//                if (rotationModels.isEmpty() && cube3Model.isSolved()) {
+//                    doExplode();
+//                }
                 update();
             }
         }
@@ -498,7 +522,7 @@ public class RubiksCubeInteract {
 
     @Synchronized
     public void undo() {
-        if (rotationPlayModels.isEmpty() && historyIndex >= 0) {
+        if (rotationModels.isEmpty() && historyIndex >= 0 && !exploding) {
             String moves = history.get(historyIndex);
             historyIndex--;
             List<RotationEnum> rotationEnums = RotationEnum.parse(moves, null);
@@ -513,42 +537,52 @@ public class RubiksCubeInteract {
 
     @Synchronized
     public void redo() {
-        if (rotationPlayModels.isEmpty() && historyIndex + 1 < history.size()) {
+        if (rotationModels.isEmpty() && historyIndex + 1 < history.size() && !exploding) {
             historyIndex++;
             String moves = history.get(historyIndex);
             applyMoves(moves, false, false, 100);
         }
     }
 
+    @Synchronized
     public void solvePhase1() {
         solvePhase(1);
     }
 
+    @Synchronized
     public void solvePhase2() {
         solvePhase(2);
     }
 
+    @Synchronized
     public void solvePhase3() {
         solvePhase(3);
     }
 
+    @Synchronized
     public void solvePhase4() {
         solvePhase(4);
     }
 
+    @Synchronized
     public void solvePhase5() {
         solvePhase(5);
     }
 
+    @Synchronized
     public void solvePhase6() {
         solvePhase(6);
     }
 
+    @Synchronized
     public void solvePhase7() {
         solvePhase(7);
     }
 
     private void solvePhase(int toPhase) {
+        if (exploding) {
+            return;
+        }
         clearRotationModels();
         String state = cube3Model.getNotation();
         DummySolverInstance dummySolverInstance = new DummySolverInstance(state);
@@ -556,4 +590,16 @@ public class RubiksCubeInteract {
         applyMoves(dummySolverInstance.getMovesNotation(), false, true, 50);
     }
 
+    @Synchronized
+    public void explode() {
+        if (!exploding) {
+            doExplode();
+        }
+    }
+
+    private void doExplode() {
+        view.initExplode();
+        explodingStart = System.currentTimeMillis();
+        exploding = true;
+    }
 }

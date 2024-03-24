@@ -13,6 +13,7 @@ import lombok.Getter;
 
 @Getter
 public class Facelet extends Group {
+    private static final Color BORDER = Color.hsb(0, 0, 0.05);
     private static final Color HIDDEN_FACE = Color.hsb(0, 0, 0.2);
     public static final Color SPECULAR_COLOR = Color.hsb(0, 0, 0.3);
     private final SideEnum sideEnum;
@@ -34,7 +35,6 @@ public class Facelet extends Group {
             case R -> addFaces(0, 1, 1, 1);
             case L -> addFaces(0, 1, 1, -1);
         }
-        getTransforms().add(new Translate(2.0 * cube.getX(), 2.0 * cube.getY(), 2.0 * cube.getZ()));
     }
 
     private void addFaces(int w, int h, int d, int dc) {
@@ -46,15 +46,15 @@ public class Facelet extends Group {
                 (sideEnum == SideEnum.R && cube.getX() == 1) ||
                 (sideEnum == SideEnum.L && cube.getX() == -1)
         ) {
-            addFace(w * 0.95, h * 0.95, d * 0.95, dc * 0.5, sideEnum.getColor());
+            addFace(w * 0.95, h * 0.95, d * 0.95, dc * 0.5, FaceletTypeEnum.PLAYABLE);
         } else {
-            addFace(w * 0.95, h * 0.95, d * 0.95, dc * 0.5, HIDDEN_FACE);
+            addFace(w * 0.95, h * 0.95, d * 0.95, dc * 0.5, FaceletTypeEnum.NOT_PLAYABLE);
         }
-        addFace(w, h, d, dc * 0.49, Color.BLACK);
+        addFace(w, h, d, dc * 0.49, FaceletTypeEnum.BORDER);
     }
 
-    private void addFace(double w, double h, double d, double dc, Color color) {
-        Box face = new FaceletBox(this, 2 * w, 2 * h, 2 * d);
+    private void addFace(double w, double h, double d, double dc, FaceletTypeEnum faceletType) {
+        Box face = new FaceletBox(this, faceletType, 2 * w, 2 * h, 2 * d);
         Translate translate;
         if (w == 0) {
             translate = new Translate(2 * dc, 0, 0);
@@ -65,6 +65,11 @@ public class Facelet extends Group {
         }
         face.getTransforms().add(translate);
         PhongMaterial material = new PhongMaterial();
+        Color color = switch (faceletType) {
+            case PLAYABLE -> sideEnum.getColor();
+            case NOT_PLAYABLE -> HIDDEN_FACE;
+            case BORDER -> BORDER;
+        };
         material.setDiffuseColor(color);
         material.setSpecularColor(SPECULAR_COLOR);
         face.setMaterial(material);
