@@ -1,8 +1,10 @@
 package io.github.glandais.rubikscube.solver;
 
+import java.util.List;
+
 public class DummySolver {
 
-    public String solve(String state) {
+    public List<SolveMoves> solve(String state) {
         DummySolverInstance dummySolverInstance = new DummySolverInstance(state);
         dummySolverInstance.solve();
         return dummySolverInstance.getMovesNotation();

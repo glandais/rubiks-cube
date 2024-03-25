@@ -1,5 +1,6 @@
 package io.github.glandais.rubikscube.solver;
 
+import io.github.glandais.rubikscube.model.Action;
 import io.github.glandais.rubikscube.model.CornerEnum;
 import io.github.glandais.rubikscube.model.Cube3Model;
 import io.github.glandais.rubikscube.model.FaceletEnum;
@@ -7,13 +8,11 @@ import io.github.glandais.rubikscube.model.SideEnum;
 import io.github.glandais.rubikscube.model.rotation.RotationEnum;
 import io.github.glandais.rubikscube.model.view.CubeVisibleOrientation;
 import io.github.glandais.rubikscube.print.ConsolePrinter;
-import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static io.github.glandais.rubikscube.model.FaceletEnum.B1;
 import static io.github.glandais.rubikscube.model.FaceletEnum.B2;
@@ -57,8 +56,7 @@ public class DummySolverInstance {
 
     private final Cube3Model cube;
 
-    @Getter
-    private final List<RotationEnum> moves;
+    private final List<SolveMoves> moves;
     private final String state;
 
     public DummySolverInstance(String state) {
@@ -67,9 +65,11 @@ public class DummySolverInstance {
         if (DEBUG) {
             consolePrinter.print(cube);
         }
-        List<RotationEnum> rotationEnums = RotationEnum.parse(state, null);
-        for (RotationEnum rotationEnum : rotationEnums) {
-            cube.apply(rotationEnum, false);
+        List<Action> actions = Action.parse(state, null);
+        for (Action action : actions) {
+            if (action instanceof RotationEnum rotationEnum) {
+                cube.apply(rotationEnum, false);
+            }
         }
         if (DEBUG) {
             consolePrinter.print(cube);
@@ -103,20 +103,20 @@ public class DummySolverInstance {
         }
     }
 
-    public String getMovesNotation() {
-        return moves.stream()
-                .map(RotationEnum::getNotation)
-                .collect(Collectors.joining(" "));
+    public List<SolveMoves> getMovesNotation() {
+        return moves;
     }
 
     private void apply(String movesStr) {
         if (DEBUG) {
             System.out.println(movesStr);
         }
-        List<RotationEnum> rotationEnums = RotationEnum.parse(movesStr, cube.getView());
-        for (RotationEnum rotationEnum : rotationEnums) {
-            moves.add(rotationEnum);
-            cube.apply(rotationEnum, false);
+        List<Action> actions = Action.parse(movesStr, cube.getView());
+        for (Action action : actions) {
+            moves.getLast().getMoves().append(" ").append(action.getNotation());
+            if (action instanceof RotationEnum rotationEnum) {
+                cube.apply(rotationEnum, false);
+            }
         }
     }
 
@@ -147,15 +147,24 @@ public class DummySolverInstance {
     }
 
     private void solvePhase1() {
+        createPhase1Moves(CubeVisibleOrientation.DEFAULT);
         loop(() -> solvePhase1Edge(U7, CubeVisibleOrientation.DEFAULT), 100);
+        createPhase1Moves(CubeVisibleOrientation.UP_RIGHT);
         loop(() -> solvePhase1Edge(U5, CubeVisibleOrientation.UP_RIGHT), 100);
+        createPhase1Moves(CubeVisibleOrientation.UP_BACK);
         loop(() -> solvePhase1Edge(U1, CubeVisibleOrientation.UP_BACK), 100);
+        createPhase1Moves(CubeVisibleOrientation.UP_LEFT);
         loop(() -> solvePhase1Edge(U3, CubeVisibleOrientation.UP_LEFT), 100);
 
         if (DEBUG) {
             System.out.println("Phase 1 solved");
             System.out.println("Moves : " + getMovesNotation());
         }
+    }
+
+    private void createPhase1Moves(CubeVisibleOrientation cubeVisibleOrientation) {
+        StringBuilder sb = new StringBuilder(cubeVisibleOrientation.notation() + " ");
+        moves.add(new SolveMoves(cubeVisibleOrientation.f().getColorName() + "/White edge", sb));
     }
 
     private boolean solvePhase1Edge(FaceletEnum edge, CubeVisibleOrientation cubeVisibleOrientation) {
@@ -226,16 +235,26 @@ public class DummySolverInstance {
     }
 
     private void solvePhase2() {
-
+        createPhase2Moves(CubeVisibleOrientation.DEFAULT);
         loop(() -> solvePhase2Corner(F2, CubeVisibleOrientation.DEFAULT), 100);
+        createPhase2Moves(CubeVisibleOrientation.UP_RIGHT);
         loop(() -> solvePhase2Corner(R2, CubeVisibleOrientation.UP_RIGHT), 100);
+        createPhase2Moves(CubeVisibleOrientation.UP_BACK);
         loop(() -> solvePhase2Corner(B2, CubeVisibleOrientation.UP_BACK), 100);
+        createPhase2Moves(CubeVisibleOrientation.UP_LEFT);
         loop(() -> solvePhase2Corner(L2, CubeVisibleOrientation.UP_LEFT), 100);
 
         if (DEBUG) {
             System.out.println("Phase 2 solved");
             System.out.println("Moves : " + getMovesNotation());
         }
+    }
+
+    private void createPhase2Moves(CubeVisibleOrientation cubeVisibleOrientation) {
+        StringBuilder sb = new StringBuilder(cubeVisibleOrientation.notation() + " ");
+        moves.add(new SolveMoves(cubeVisibleOrientation.f().getColorName() + "/" +
+                                 cubeVisibleOrientation.r().getColorName() +
+                                 "/White corner", sb));
     }
 
     private boolean solvePhase2Corner(FaceletEnum corner, CubeVisibleOrientation view) {
@@ -289,7 +308,6 @@ public class DummySolverInstance {
     }
 
     private void solvePhase3() {
-
         loop(this::solvePhase3Edges, 200);
 
         if (DEBUG) {
@@ -299,15 +317,27 @@ public class DummySolverInstance {
     }
 
     private boolean solvePhase3Edges() {
+
+        creatPhase3Moves(CubeVisibleOrientation.DOWN_FRONT);
         solvePhase3Edge(F3, CubeVisibleOrientation.DOWN_FRONT, CubeVisibleOrientation.DOWN_LEFT);
+        creatPhase3Moves(CubeVisibleOrientation.DOWN_LEFT);
         solvePhase3Edge(L3, CubeVisibleOrientation.DOWN_LEFT, CubeVisibleOrientation.DOWN_BACK);
+        creatPhase3Moves(CubeVisibleOrientation.DOWN_BACK);
         solvePhase3Edge(B3, CubeVisibleOrientation.DOWN_BACK, CubeVisibleOrientation.DOWN_RIGHT);
+        creatPhase3Moves(CubeVisibleOrientation.DOWN_RIGHT);
         solvePhase3Edge(R3, CubeVisibleOrientation.DOWN_RIGHT, CubeVisibleOrientation.DOWN_FRONT);
 
         if (!isPhase1Ok() || !isPhase2Ok()) {
             throw new IllegalStateException("something was wrong with " + state);
         }
         return isPhase3Ok();
+    }
+
+    private void creatPhase3Moves(CubeVisibleOrientation cubeVisibleOrientation) {
+        StringBuilder sb = new StringBuilder(cubeVisibleOrientation.notation() + " ");
+        moves.add(new SolveMoves(cubeVisibleOrientation.f().getColorName() + "/" +
+                                 cubeVisibleOrientation.r().getColorName() +
+                                 " edge", sb));
     }
 
     private void solvePhase3Edge(FaceletEnum edge, CubeVisibleOrientation view, CubeVisibleOrientation viewU5F5) {
@@ -373,6 +403,8 @@ public class DummySolverInstance {
             return;
         }
 
+        SolveMoves last = moves.getLast();
+        last.setPhase(last.getPhase() + " - not yet possible");
         // move wrong edge (R3 -> B1)
         apply(f1Tof5);
 
@@ -383,7 +415,6 @@ public class DummySolverInstance {
     }
 
     private void solvePhase4() {
-
         loop(this::solvePhase4YellowCross, 200);
 
         if (DEBUG) {
@@ -393,15 +424,24 @@ public class DummySolverInstance {
     }
 
     private boolean solvePhase4YellowCross() {
+        createPhase4Moves(CubeVisibleOrientation.DOWN_FRONT);
         solvePhase4YellowCross(CubeVisibleOrientation.DOWN_FRONT);
+        createPhase4Moves(CubeVisibleOrientation.DOWN_LEFT);
         solvePhase4YellowCross(CubeVisibleOrientation.DOWN_LEFT);
+        createPhase4Moves(CubeVisibleOrientation.DOWN_BACK);
         solvePhase4YellowCross(CubeVisibleOrientation.DOWN_BACK);
+        createPhase4Moves(CubeVisibleOrientation.DOWN_RIGHT);
         solvePhase4YellowCross(CubeVisibleOrientation.DOWN_RIGHT);
 
         if (!isPhase1Ok() || !isPhase2Ok() || !isPhase3Ok()) {
             throw new IllegalStateException("something was wrong with " + state);
         }
         return isPhase4Ok();
+    }
+
+    private void createPhase4Moves(CubeVisibleOrientation cubeVisibleOrientation) {
+        StringBuilder sb = new StringBuilder(cubeVisibleOrientation.notation() + " ");
+        moves.add(new SolveMoves(cubeVisibleOrientation.f().getColorName() + " - Yellow cross", sb));
     }
 
     private void solvePhase4YellowCross(CubeVisibleOrientation view) {
@@ -439,6 +479,7 @@ public class DummySolverInstance {
     }
 
     private void solvePhase5() {
+        moves.add(new SolveMoves("Yellow edges", new StringBuilder()));
 
         loop(this::solvePhase5YellowEdges, 200);
 
@@ -450,6 +491,7 @@ public class DummySolverInstance {
 
     private boolean solvePhase5YellowEdges() {
         cube.setView(CubeVisibleOrientation.DEFAULT);
+        apply(CubeVisibleOrientation.DOWN_FRONT.notation());
         if (isPhase5Ok()) {
             return true;
         }
@@ -468,22 +510,27 @@ public class DummySolverInstance {
         String swapper = "R U R' U R U2 R' U";
         if (cube.getFacelet(D3) == D3) {
             // D5 <-> D7
+            apply(CubeVisibleOrientation.DOWN_RIGHT.notation());
             cube.setView(CubeVisibleOrientation.DOWN_RIGHT);
             apply(swapper);
         } else {
             if (cube.getFacelet(D7) == D3) {
                 // D3 <-> D7
+                apply(CubeVisibleOrientation.DOWN_BACK.notation());
                 cube.setView(CubeVisibleOrientation.DOWN_BACK);
                 apply(swapper);
                 // D5 <-> D7
+                apply(CubeVisibleOrientation.DOWN_RIGHT.notation());
                 cube.setView(CubeVisibleOrientation.DOWN_RIGHT);
                 apply(swapper);
             } else {
                 // D3 is in D5
                 // D5 <-> D7
+                apply(CubeVisibleOrientation.DOWN_RIGHT.notation());
                 cube.setView(CubeVisibleOrientation.DOWN_RIGHT);
                 apply(swapper);
                 // D3 <-> D7
+                apply(CubeVisibleOrientation.DOWN_BACK.notation());
                 cube.setView(CubeVisibleOrientation.DOWN_BACK);
                 apply(swapper);
             }
@@ -500,6 +547,7 @@ public class DummySolverInstance {
     }
 
     private void solvePhase6() {
+        moves.add(new SolveMoves("Yellow corners", new StringBuilder()));
 
         loop(this::solvePhase6YellowCornersPlaces, 200);
 
@@ -518,6 +566,8 @@ public class DummySolverInstance {
             !phase6RightCorner(CornerEnum.DFR) &&
             !phase6RightCorner(CornerEnum.DRB) &&
             !phase6RightCorner(CornerEnum.DBL)) {
+            moves.add(new SolveMoves("Swap wrong yellow corners", new StringBuilder()));
+            apply(CubeVisibleOrientation.DOWN_LEFT.notation());
             doSwapYellowCorners(CubeVisibleOrientation.DOWN_LEFT);
         }
 
@@ -533,6 +583,11 @@ public class DummySolverInstance {
     }
 
     private void swapYellowCorners(CornerEnum corner, CubeVisibleOrientation view) {
+        moves.add(new SolveMoves(corner.getL().getSide().getColorName() + "/" +
+                                 corner.getR().getSide().getColorName() + "/" +
+                                 corner.getD().getSide().getColorName() +
+                                 " corner", new StringBuilder()));
+        apply(view.notation());
         if (!isPhase6Ok() && phase6RightCorner(corner)) {
             doSwapYellowCorners(view);
             if (!isPhase6Ok()) {
@@ -565,6 +620,8 @@ public class DummySolverInstance {
     }
 
     private void solvePhase7() {
+        moves.add(new SolveMoves("Orient yellow corners", new StringBuilder()));
+        apply(CubeVisibleOrientation.DOWN_FRONT.notation());
         cube.setView(CubeVisibleOrientation.DOWN_FRONT);
         for (FaceletEnum u8Target : List.of(D0, D6, D8, D2)) {
             if (cube.getFacelet(U8) != u8Target) {

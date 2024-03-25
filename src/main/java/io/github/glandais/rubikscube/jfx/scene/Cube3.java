@@ -20,7 +20,9 @@ public class Cube3 extends Group {
 
     private List<Cube> cubes;
     private Map<FaceletEnum, Facelet> facelets;
+    @Getter
     private final Rotate rotateX = new Rotate(0, X_AXIS);
+    @Getter
     private final Rotate rotateY = new Rotate(0, Y_AXIS);
 
     public Cube3() {
@@ -102,16 +104,16 @@ public class Cube3 extends Group {
         return rotateY.getAngle();
     }
 
-    public boolean explode(long elapsed) {
-        for (Cube cube : cubes) {
-            cube.explode(elapsed);
-        }
-        return elapsed > Cube.duration;
-    }
-
     public void initExplode() {
         for (Cube cube : cubes) {
             cube.initExplode();
         }
     }
+    public boolean explode(long elapsed) {
+        for (Cube cube : cubes) {
+            cube.explode(elapsed);
+        }
+        return elapsed > Cube.EXPLOSION_DURATION;
+    }
+
 }

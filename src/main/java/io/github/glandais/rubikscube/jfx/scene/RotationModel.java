@@ -15,7 +15,7 @@ import static javafx.scene.transform.Rotate.X_AXIS;
 import static javafx.scene.transform.Rotate.Y_AXIS;
 import static javafx.scene.transform.Rotate.Z_AXIS;
 
-public abstract class RotationModel {
+public abstract class RotationModel extends ActionModel {
 
     private final Cube3 cube3;
     @Getter
@@ -79,6 +79,7 @@ public abstract class RotationModel {
         }
     }
 
+    @Override
     @Synchronized
     public void cancel() {
         for (Cube cube : getRotated()) {
@@ -86,6 +87,7 @@ public abstract class RotationModel {
         }
     }
 
+    @Override
     public boolean tick() {
         if (rotationStart == -1) {
             rotationStart = System.currentTimeMillis();

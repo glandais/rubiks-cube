@@ -1,7 +1,9 @@
 package io.github.glandais.rubikscube.jfx;
 
+import javafx.beans.property.BooleanProperty;
+
 public class MovesButton extends ActionButton {
-    public MovesButton(String label, String moves) {
-        super(label, moves, () -> RubiksCubeApplication.rubiksCubeInteract.applyMoves(moves, true, true, 100));
+    public MovesButton(BooleanProperty disable, String label, String movesDesc, String moves) {
+        super(disable, label, moves, () -> RubiksCubeApplication.rubiksCubeInteract.applyMoves(movesDesc, moves, true));
     }
 }

@@ -15,6 +15,10 @@ import java.util.Random;
 @Getter
 public class Cube extends Group {
 
+    private static final Random SECURE_RANDOM = new SecureRandom();
+
+    public static final long EXPLOSION_DURATION = 5_000;
+
     private final Point3D initialPosition;
     private final Translate translate;
     private final Rotate rotateX;
@@ -24,6 +28,15 @@ public class Cube extends Group {
 
     private final List<Facelet> faces;
     private final List<Facelet> realFaces;
+
+    private double explosionTranslationBase;
+    private double explosionTranslationRadius;
+
+    private int explosionTranslationCount;
+
+    private int explosionRotationXCount;
+    private int explosionRotationYCount;
+    private int explosionRotationZCount;
 
     public Cube(int x, int y, int z) {
         super();
@@ -88,37 +101,25 @@ public class Cube extends Group {
         translate.setZ(2 * this.initialPosition.getZ());
     }
 
-    public static final long duration = 5_000;
-
-    private static final Random rand = new SecureRandom();
-    private double d0;
-    private double r;
-
-    private int nt;
-
-    private int rx;
-    private int ry;
-    private int rz;
-
     public void initExplode() {
-        d0 = 3.5 + rand.nextDouble(1.0);
-        r = d0 - 2.0;
-        nt = 8;//3 + rand.nextInt(6);
-        rx = 3 + rand.nextInt(6);
-        ry = 3 + rand.nextInt(6);
-        rz = 0;//3 + rand.nextInt(6);
+        explosionTranslationBase = 3.5 + SECURE_RANDOM.nextDouble(1.0);
+        explosionTranslationRadius = explosionTranslationBase - 2.0;
+        explosionTranslationCount = 8;//3 + rand.nextInt(6);
+        explosionRotationXCount = 3 + SECURE_RANDOM.nextInt(6);
+        explosionRotationYCount = 3 + SECURE_RANDOM.nextInt(6);
+        explosionRotationZCount = 0;//3 + rand.nextInt(6);
+        explode(0);
     }
 
-    public boolean explode(long elapsed) {
-        elapsed = Math.min(elapsed, duration);
-        double d = d0 + r * Math.sin(2 * Math.PI * (0.75 + (1.0 * elapsed * nt / duration)));
+    public void explode(long elapsed) {
+        elapsed = Math.min(elapsed, EXPLOSION_DURATION);
+        double d = explosionTranslationBase + explosionTranslationRadius * Math.sin(2 * Math.PI * (0.75 + (1.0 * elapsed * explosionTranslationCount / EXPLOSION_DURATION)));
         translate.setX(d * this.initialPosition.getX());
         translate.setY(d * this.initialPosition.getY());
         translate.setZ(d * this.initialPosition.getZ());
-        rotateX.setAngle(elapsed * 360.0 * rx / duration);
-        rotateY.setAngle(elapsed * 360.0 * ry / duration);
-        rotateZ.setAngle(elapsed * 360.0 * rz / duration);
-        return elapsed == duration;
+        rotateX.setAngle(elapsed * 360.0 * explosionRotationXCount / EXPLOSION_DURATION);
+        rotateY.setAngle(elapsed * 360.0 * explosionRotationYCount / EXPLOSION_DURATION);
+        rotateZ.setAngle(elapsed * 360.0 * explosionRotationZCount / EXPLOSION_DURATION);
     }
 
 }

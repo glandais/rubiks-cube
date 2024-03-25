@@ -1,5 +1,6 @@
 package io.github.glandais.rubikscube.model.rotation;
 
+import io.github.glandais.rubikscube.model.Action;
 import io.github.glandais.rubikscube.model.SideEnum;
 import io.github.glandais.rubikscube.model.SideOppositeEnum;
 import io.github.glandais.rubikscube.model.view.CubeVisibleOrientation;
@@ -11,7 +12,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Getter
-public enum RotationEnum {
+public enum RotationEnum implements Action {
     F("F", SideEnum.F, RotationModifierEnum.NORMAL, AxisEnum.Z, -90.0, null, null, 1),
     F_DOUBLE("F2", SideEnum.F, RotationModifierEnum.DOUBLE, AxisEnum.Z, -180.0, null, null, 1),
     F_REVERSE("F'", SideEnum.F, RotationModifierEnum.REVERSE, AxisEnum.Z, 90.0, null, null, 1),
@@ -69,20 +70,6 @@ public enum RotationEnum {
             }
         }
         throw new IllegalArgumentException("no RotationEnum for " + side + " " + modifier);
-    }
-
-    public static List<RotationEnum> parse(String moves, CubeVisibleOrientation cubeVisibleOrientation) {
-        List<RotationEnum> result = new ArrayList<>();
-        for (String move : moves.split(" ")) {
-            if (!move.isEmpty()) {
-                RotationEnum rotation = forNotation(move);
-                if (cubeVisibleOrientation != null) {
-                    rotation = fromOtherSide(rotation, cubeVisibleOrientation);
-                }
-                result.add(rotation);
-            }
-        }
-        return result;
     }
 
     public RotationEnum reverse() {

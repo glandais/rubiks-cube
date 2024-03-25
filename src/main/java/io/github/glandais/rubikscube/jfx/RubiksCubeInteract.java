@@ -2,28 +2,40 @@ package io.github.glandais.rubikscube.jfx;
 
 import io.github.glandais.rubikscube.jfx.model.FaceletDirectionEnum;
 import io.github.glandais.rubikscube.jfx.model.FaceletRotationEnum;
+import io.github.glandais.rubikscube.jfx.model.Moves;
+import io.github.glandais.rubikscube.jfx.model.TreeViewItem;
+import io.github.glandais.rubikscube.jfx.model.TreeViewMove;
+import io.github.glandais.rubikscube.jfx.model.TreeViewMoves;
+import io.github.glandais.rubikscube.jfx.scene.ActionModel;
 import io.github.glandais.rubikscube.jfx.scene.Facelet;
 import io.github.glandais.rubikscube.jfx.scene.FaceletBox;
 import io.github.glandais.rubikscube.jfx.scene.FaceletClicked;
 import io.github.glandais.rubikscube.jfx.scene.RotationDraggedModel;
-import io.github.glandais.rubikscube.jfx.scene.RotationModel;
 import io.github.glandais.rubikscube.jfx.scene.RotationPlayModel;
 import io.github.glandais.rubikscube.jfx.scene.RubiksCubeView;
-import io.github.glandais.rubikscube.model.Cube3Model;
+import io.github.glandais.rubikscube.jfx.scene.ViewModel;
+import io.github.glandais.rubikscube.model.Action;
 import io.github.glandais.rubikscube.model.SideEnum;
 import io.github.glandais.rubikscube.model.rotation.RotationEnum;
 import io.github.glandais.rubikscube.model.view.CubeVisibleOrientation;
+import io.github.glandais.rubikscube.model.view.ViewEnum;
 import io.github.glandais.rubikscube.solver.DummySolver;
 import io.github.glandais.rubikscube.solver.DummySolverInstance;
 import io.github.glandais.rubikscube.solver.Scrambler;
+import io.github.glandais.rubikscube.solver.SolveMoves;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.Node;
 import javafx.scene.SubScene;
 import javafx.scene.control.Label;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -34,6 +46,7 @@ import javafx.util.Duration;
 import lombok.Getter;
 import lombok.Synchronized;
 
+import javax.swing.text.View;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -63,15 +76,17 @@ import static javafx.scene.transform.Rotate.Y_AXIS;
 import static javafx.scene.transform.Rotate.Z_AXIS;
 
 public class RubiksCubeInteract {
-    private final Cube3Model cube3Model = new Cube3Model();
     private final DummySolver dummySolver = new DummySolver();
 
-    private final List<RotationModel> rotationModels = new ArrayList<>();
+    private final List<ActionModel> actionModels = new ArrayList<>();
     private RubiksCubeView view;
     @Getter
     private Label xRotationLabel;
     @Getter
     private Label yRotationLabel;
+    @Getter
+    private TreeView<TreeViewItem> treeView;
+    private TreeItem<TreeViewItem> treeViewRoot;
     private double initDraggedX;
     private double initDraggedY;
     private double previousDraggedX;
@@ -82,23 +97,102 @@ public class RubiksCubeInteract {
     private double rotationDraggedStartX;
     private double rotationDraggedStartY;
 
-    private int historyIndex;
-    private List<String> history;
-
     private boolean exploding = false;
     private long explodingStart;
+    @Getter
+    private BooleanProperty disable;
 
     @Synchronized
     public void init() {
         view = new RubiksCubeView();
         xRotationLabel = new Label();
         yRotationLabel = new Label();
+        treeViewRoot = new TreeItem<>(null);
+        treeViewRoot.setExpanded(true);
+        treeView = new TreeView<>(treeViewRoot);
+        treeView.setShowRoot(false);
+        treeView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        treeView.getSelectionModel()
+                .selectedItemProperty()
+                .addListener((observable, oldValue, newValue) -> nodeSelected(oldValue, newValue));
+
+        disable = new SimpleBooleanProperty();
+        disable.bindBidirectional(treeView.disableProperty());
+    }
+
+    @Synchronized
+    protected void nodeSelected(TreeItem<TreeViewItem> oldValue, TreeItem<TreeViewItem> newValue) {
+        List<Action> rotationEnums = getActions(newValue);
+        ViewEnum lastRotation = null;
+        for (Action rotationEnum : rotationEnums) {
+            if (rotationEnum instanceof ViewEnum viewEnum) {
+                lastRotation = viewEnum;
+            }
+        }
+        List<Action> cubeMoves = getActions(oldValue);
+        if (cubeMoves.size() > rotationEnums.size()) {
+            List<Action> subList = cubeMoves.subList(rotationEnums.size(), cubeMoves.size());
+            String moves = subList
+                    .reversed()
+                    .stream()
+                    .filter(a -> !(a instanceof ViewEnum))
+                    .map(Action::reverse)
+                    .map(Action::getNotation)
+                    .collect(Collectors.joining(" "));
+            applyNodeSelectedMoves(lastRotation, moves);
+        } else if (cubeMoves.size() < rotationEnums.size()) {
+            List<Action> subList = rotationEnums.subList(cubeMoves.size(), rotationEnums.size());
+            String moves = subList
+                    .stream()
+                    .map(Action::getNotation)
+                    .collect(Collectors.joining(" "));
+            applyNodeSelectedMoves(lastRotation, moves);
+        }
+    }
+
+    private void applyNodeSelectedMoves(ViewEnum lastRotation, String moves) {
+        List<Action> actions = Action.parse(moves, null);
+        if (lastRotation != null) {
+            actions.addFirst(lastRotation);
+        }
+        if (actions.isEmpty()) {
+            return;
+        }
+        int duration90 = Math.max(20, Math.min(100, 1000 / actions.size()));
+        for (Action action : actions) {
+            if (action instanceof RotationEnum rotationEnum) {
+                RotationPlayModel rotationModel = new RotationPlayModel(view.getCube3(), rotationEnum, duration90);
+                actionModels.add(rotationModel);
+            } else if (action instanceof ViewEnum viewEnum) {
+                actionModels.add(new ViewModel(view.getRotateX(), view.getRotateY(), viewEnum, duration90));
+            }
+        }
+    }
+
+    private List<Action> getActions(TreeItem<TreeViewItem> treeItem) {
+        if (treeItem == null) {
+            return List.of();
+        }
+        List<Action> rotationEnums = new ArrayList<>();
+        for (TreeItem<TreeViewItem> child : treeViewRoot.getChildren()) {
+            if (child.equals(treeItem)) {
+                rotationEnums.addAll(child.getValue().getActions());
+                return rotationEnums;
+            }
+            for (TreeItem<TreeViewItem> childChild : child.getChildren()) {
+                rotationEnums.addAll(childChild.getValue().getActions());
+                if (childChild.equals(treeItem)) {
+                    return rotationEnums;
+                }
+            }
+        }
+        return rotationEnums;
     }
 
     @Synchronized
     public void start() {
         resetView();
-        doScramble(0);
+        doScramble();
         // The main game loop
         Timeline gameLoop = new Timeline();
         gameLoop.setCycleCount(Animation.INDEFINITE);
@@ -115,69 +209,59 @@ public class RubiksCubeInteract {
     }
 
     @Synchronized
-    public void setOnKeyPressed(KeyEvent ke) {
-//        System.out.println("keyPressed " + ke);
-    }
-
-    @Synchronized
-    public void setOnKeyTyped(KeyEvent ke) {
-//        System.out.println("keyTyped " + ke);
-    }
-
-    @Synchronized
     public void onKeyReleased(KeyEvent ke) {
         if (ke.getCode() == KeyCode.F) {
             if (ke.isShiftDown()) {
-                rotateUser(F_DOUBLE);
+                rotateKeyboard(F_DOUBLE);
             } else if (ke.isAltDown()) {
-                rotateUser(F_REVERSE);
+                rotateKeyboard(F_REVERSE);
             } else {
-                rotateUser(F);
+                rotateKeyboard(F);
             }
         }
         if (ke.getCode() == KeyCode.B) {
             if (ke.isShiftDown()) {
-                rotateUser(B_DOUBLE);
+                rotateKeyboard(B_DOUBLE);
             } else if (ke.isAltDown()) {
-                rotateUser(B_REVERSE);
+                rotateKeyboard(B_REVERSE);
             } else {
-                rotateUser(B);
+                rotateKeyboard(B);
             }
         }
         if (ke.getCode() == KeyCode.U) {
             if (ke.isShiftDown()) {
-                rotateUser(U_DOUBLE);
+                rotateKeyboard(U_DOUBLE);
             } else if (ke.isAltDown()) {
-                rotateUser(U_REVERSE);
+                rotateKeyboard(U_REVERSE);
             } else {
-                rotateUser(U);
+                rotateKeyboard(U);
             }
         }
         if (ke.getCode() == KeyCode.D) {
             if (ke.isShiftDown()) {
-                rotateUser(D_DOUBLE);
+                rotateKeyboard(D_DOUBLE);
             } else if (ke.isAltDown()) {
-                rotateUser(D_REVERSE);
+                rotateKeyboard(D_REVERSE);
             } else {
-                rotateUser(D);
+                rotateKeyboard(D);
             }
         }
         if (ke.getCode() == KeyCode.R) {
             if (ke.isShiftDown()) {
-                rotateUser(R_DOUBLE);
+                rotateKeyboard(R_DOUBLE);
             } else if (ke.isAltDown()) {
-                rotateUser(R_REVERSE);
+                rotateKeyboard(R_REVERSE);
             } else {
-                rotateUser(R);
+                rotateKeyboard(R);
             }
         }
         if (ke.getCode() == KeyCode.L) {
             if (ke.isShiftDown()) {
-                rotateUser(L_DOUBLE);
+                rotateKeyboard(L_DOUBLE);
             } else if (ke.isAltDown()) {
-                rotateUser(L_REVERSE);
+                rotateKeyboard(L_REVERSE);
             } else {
-                rotateUser(L);
+                rotateKeyboard(L);
             }
         }
         if (ke.getCode() == KeyCode.ESCAPE) {
@@ -186,14 +270,21 @@ public class RubiksCubeInteract {
         if (ke.getCode() == KeyCode.F2) {
             scramble();
         }
-//        System.out.println("keyReleased " + ke);
+    }
+
+    @Synchronized
+    protected void rotateKeyboard(RotationEnum rotation) {
+        if (disable.get()) {
+            return;
+        }
+        applyMoves("Keyboard", rotation.getNotation(), true);
     }
 
     @Synchronized
     public void onMousePressed(MouseEvent event) {
         if (event.getButton() == MouseButton.PRIMARY) {
             draggedInitial = null;
-            if (rotationModels.isEmpty() && !exploding) {
+            if (!disable.get()) {
                 PickResult pickResult = event.getPickResult();
                 Node intersectedNode = pickResult.getIntersectedNode();
                 if (intersectedNode instanceof FaceletBox faceletBox) {
@@ -287,10 +378,185 @@ public class RubiksCubeInteract {
         return new Point2D(x, y);
     }
 
-    private void rotateView(double dySinceLast, double dxSinceLast) {
-        view.rotate(dySinceLast, dxSinceLast);
-        xRotationLabel.setText("rotX : " + Math.round(view.getAngleX()));
-        yRotationLabel.setText("rotY : " + Math.round(view.getAngleY()));
+    private RotationEnum getRotation(FaceletClicked draggedInitial, Point2D point2D) {
+        FaceletDirectionEnum direction = null;
+        double angle = Math.atan2(point2D.getX(), point2D.getY()) * 180.0 / Math.PI;
+        if (-30 < angle && angle < 30) {
+            direction = FaceletDirectionEnum.UP;
+        } else if (60 < angle && angle < 120) {
+            direction = FaceletDirectionEnum.RIGHT;
+        } else if (-120 < angle && angle < -60) {
+            direction = FaceletDirectionEnum.LEFT;
+        } else if (angle < -150 || angle > 150) {
+            direction = FaceletDirectionEnum.DOWN;
+        }
+        return FaceletRotationEnum.getRotation(draggedInitial.facelet().getCurrentPosition(), direction);
+    }
+
+    @Synchronized
+    public void onMouseReleased(MouseEvent event) {
+        if (event.getButton() == MouseButton.BACK) {
+            if (!disable.get()) {
+                goToGroupPrevious();
+            }
+        } else if (event.getButton() == MouseButton.FORWARD) {
+            if (!disable.get()) {
+                goToGroupNext();
+            }
+        } else if (event.getButton() == MouseButton.PRIMARY) {
+            if (rotationDraggedModel != null) {
+                double targetAngle = 90 * Math.round(rotationDraggedModel.getCurrentAngle() / 90.0);
+                double currentAngle = targetAngle;
+                while (currentAngle < -180) {
+                    currentAngle = currentAngle + 360;
+                }
+                while (currentAngle >= 180) {
+                    currentAngle = currentAngle - 360;
+                }
+                RotationEnum rotationEnum = null;
+                if (currentAngle != 0) {
+                    for (RotationEnum value : RotationEnum.values()) {
+                        if (
+                                value.getAxis().equals(rotationDraggedModel.getAxis()) &&
+                                (
+                                        value.getAngle() == currentAngle ||
+                                        (
+                                                Math.abs(value.getAngle()) == 180 &&
+                                                Math.abs(value.getAngle()) == Math.abs(currentAngle)
+                                        )
+                                ) &&
+                                Objects.equals(value.getX(), rotationDraggedModel.getRotation().getX()) &&
+                                Objects.equals(value.getY(), rotationDraggedModel.getRotation().getY()) &&
+                                Objects.equals(value.getZ(), rotationDraggedModel.getRotation().getZ())
+                        ) {
+                            rotationEnum = value;
+                        }
+                    }
+                }
+
+                rotationDraggedModel.released(rotationEnum, targetAngle);
+                actionModels.add(rotationDraggedModel);
+            }
+            draggedInitial = null;
+            rotationDraggedModel = null;
+        }
+    }
+
+    @Synchronized
+    public void onScroll(ScrollEvent event) {
+        double v = 1000.0;
+        double ratio = (v + event.getDeltaY()) / v;
+        view.onZoom(ratio);
+    }
+
+    @Synchronized
+    public void resetView() {
+        view.resetView();
+        rotateView(0, 0);
+    }
+
+    @Synchronized
+    public void reset() {
+        clearRotationModels();
+        disable.set(false);
+        view.reset();
+        treeViewRoot.getChildren().clear();
+        applyMoves(List.of(new Moves("Init", List.of())));
+        exploding = false;
+    }
+
+    private void clearRotationModels() {
+        if (!actionModels.isEmpty()) {
+            actionModels.getFirst().cancel();
+        }
+        actionModels.clear();
+    }
+
+    @Synchronized
+    public void scramble() {
+        doScramble();
+    }
+
+    @Synchronized
+    public void solveDummy() {
+        if (disable.get()) {
+            return;
+        }
+        doSolve();
+    }
+
+    private void doScramble() {
+        reset();
+        String moves = "fru " + Scrambler.scramble();
+        System.out.println("Scramble : " + moves);
+        applyMoves("Scramble", moves, false);
+    }
+
+    private void applySolution(List<SolveMoves> solveMoves) {
+        List<Moves> moves = solveMoves.stream()
+                .map(s -> new Moves(s.getPhase(), Action.parse(s.getMoves().toString(), null)))
+                .toList();
+        applyMoves(moves);
+    }
+
+    @Synchronized
+    public void applyMoves(String desc, String moves, boolean fromView) {
+        CubeVisibleOrientation cubeVisibleOrientation = null;
+        if (fromView) {
+            cubeVisibleOrientation = getCubeVisibleOrientation();
+        }
+        List<Action> actions = Action.parse(moves, cubeVisibleOrientation);
+        applyMoves(List.of(new Moves(desc, actions)));
+    }
+
+    @Synchronized
+    public void applyMoves(List<Moves> movesList) {
+        if (movesList.isEmpty()) {
+            return;
+        }
+
+        // remove actions after current selection
+        TreeItem<TreeViewItem> selectedItem = treeView.getSelectionModel().getSelectedItem();
+        boolean found = false;
+        List<Runnable> removes = new ArrayList<>();
+        for (TreeItem<TreeViewItem> child : treeViewRoot.getChildren()) {
+            if (found) {
+                removes.add(() -> treeViewRoot.getChildren().remove(child));
+            } else if (child.equals(selectedItem)) {
+                found = true;
+            } else {
+                for (TreeItem<TreeViewItem> childChild : child.getChildren()) {
+                    if (found) {
+                        removes.add(() -> child.getChildren().remove(childChild));
+                    } else if (childChild.equals(selectedItem)) {
+                        found = true;
+                    }
+                }
+            }
+        }
+        for (Runnable remove : removes) {
+            remove.run();
+        }
+        TreeItem<TreeViewItem> last = null;
+
+        for (Moves moves : movesList) {
+            List<Action> actions = moves.actions();
+            if (!actions.isEmpty()) {
+                TreeItem<TreeViewItem> moveGroup = new TreeItem<>(new TreeViewMoves(moves.desc(), List.of()));
+                moveGroup.setExpanded(true);
+                for (Action action : actions) {
+                    TreeItem<TreeViewItem> move = new TreeItem<>(new TreeViewMove(action));
+                    moveGroup.getChildren().add(move);
+                    last = move;
+                }
+                treeViewRoot.getChildren().add(moveGroup);
+            }
+        }
+
+        if (last != null) {
+            treeView.scrollTo(treeView.getRow(last));
+            treeView.getSelectionModel().select(last);
+        }
     }
 
     private CubeVisibleOrientation getCubeVisibleOrientation() {
@@ -326,221 +592,30 @@ public class RubiksCubeInteract {
         return new CubeVisibleOrientation(f, r, u);
     }
 
-    private RotationEnum getRotation(FaceletClicked draggedInitial, Point2D point2D) {
-        FaceletDirectionEnum direction = null;
-        double angle = Math.atan2(point2D.getX(), point2D.getY()) * 180.0 / Math.PI;
-        if (-30 < angle && angle < 30) {
-            direction = FaceletDirectionEnum.UP;
-        } else if (60 < angle && angle < 120) {
-            direction = FaceletDirectionEnum.RIGHT;
-        } else if (-120 < angle && angle < -60) {
-            direction = FaceletDirectionEnum.LEFT;
-        } else if (angle < -150 || angle > 150) {
-            direction = FaceletDirectionEnum.DOWN;
-        }
-        return FaceletRotationEnum.getRotation(draggedInitial.facelet().getCurrentPosition(), direction);
-    }
-
-    @Synchronized
-    public void onMouseReleased(MouseEvent event) {
-//        System.out.println(event);
-        if (event.getButton() == MouseButton.BACK) {
-            undo();
-        } else if (event.getButton() == MouseButton.FORWARD) {
-            redo();
-        } else if (event.getButton() == MouseButton.PRIMARY) {
-            if (rotationDraggedModel != null) {
-                double targetAngle = 90 * Math.round(rotationDraggedModel.getCurrentAngle() / 90.0);
-                double currentAngle = targetAngle;
-                while (currentAngle < -180) {
-                    currentAngle = currentAngle + 360;
-                }
-                while (currentAngle >= 180) {
-                    currentAngle = currentAngle - 360;
-                }
-                RotationEnum rotationEnum = null;
-                if (currentAngle != 0) {
-                    for (RotationEnum value : RotationEnum.values()) {
-                        if (
-                                value.getAxis().equals(rotationDraggedModel.getAxis()) &&
-                                (
-                                        value.getAngle() == currentAngle ||
-                                        (
-                                                Math.abs(value.getAngle()) == 180 &&
-                                                Math.abs(value.getAngle()) == Math.abs(currentAngle)
-                                        )
-                                ) &&
-                                Objects.equals(value.getX(), rotationDraggedModel.getRotation().getX()) &&
-                                Objects.equals(value.getY(), rotationDraggedModel.getRotation().getY()) &&
-                                Objects.equals(value.getZ(), rotationDraggedModel.getRotation().getZ())
-                        ) {
-                            rotationEnum = value;
-                        }
-                    }
-                }
-
-                rotationDraggedModel.released(rotationEnum, targetAngle);
-                if (rotationEnum != null) {
-                    historyIndex++;
-                    history = history.subList(0, historyIndex);
-                    history.add(rotationEnum.getNotation());
-                }
-                rotationModels.add(rotationDraggedModel);
-            }
-            draggedInitial = null;
-            rotationDraggedModel = null;
-        }
-    }
-
-    @Synchronized
-    public void onMouseClicked(MouseEvent event) {
-//            PickResult result = t.getPickResult();
-//            Node intersectedNode = result.getIntersectedNode();
-//            if (intersectedNode instanceof CubeFace cubeFace) {
-//                System.out.println(cubeFace.x + " " + cubeFace.y + " " + cubeFace.z);
-//            }
-    }
-
-    @Synchronized
-    public void onScroll(ScrollEvent event) {
-//        System.out.println("onScroll " + event);
-        double v = 1000.0;
-        double ratio = (v + event.getDeltaY()) / v;
-        view.onZoom(ratio);
-    }
-
-    @Synchronized
-    public void resetView() {
-        if (!exploding) {
-            view.resetView();
-            rotateView(0, 0);
-        }
-    }
-
-    @Synchronized
-    public void reset() {
-        if (exploding) {
-            return;
-        }
-        clearRotationModels();
-        view.reset();
-        cube3Model.reset();
-        historyIndex = -1;
-        history = new ArrayList<>();
-    }
-
-    private void clearRotationModels() {
-        if (!rotationModels.isEmpty()) {
-            rotationModels.getFirst().cancel();
-        }
-        rotationModels.clear();
-    }
-
-    @Synchronized
-    public void rotateUser(RotationEnum rotation) {
-        if (exploding) {
-            return;
-        }
-        applyMoves(rotation.getNotation(), true, true, 100);
-    }
-
-    @Synchronized
-    public void scramble() {
-        if (exploding) {
-            return;
-        }
-        doScramble(50);
-    }
-
-    @Synchronized
-    public void solveDummy() {
-        if (exploding) {
-            return;
-        }
-        doSolve(cube3Model.getNotation());
-    }
-
-    private String doScramble(int duration) {
-        reset();
-        String moves = Scrambler.scramble();
-        System.out.println("Scramble : " + moves);
-        applyMoves(moves, false, false, duration);
-        return moves;
-    }
-
-    private void doSolve(String moves) {
-        clearRotationModels();
-        String solution = dummySolver.solve(moves);
-        applyMoves(solution, false, true, 50);
-    }
-
-    @Synchronized
-    public void applyMoves(String moves, boolean fromView, boolean addHistory, int duration90) {
-        if (exploding) {
-            return;
-        }
-        CubeVisibleOrientation cubeVisibleOrientation = null;
-        if (fromView) {
-            cubeVisibleOrientation = getCubeVisibleOrientation();
-        }
-        List<RotationEnum> rotationEnums = RotationEnum.parse(moves, cubeVisibleOrientation);
-        if (rotationEnums.isEmpty()) {
-            return;
-        }
-        for (RotationEnum rotation : rotationEnums) {
-            RotationPlayModel rotationModel = new RotationPlayModel(view.getCube3(), rotation, duration90);
-            rotationModels.add(rotationModel);
-        }
-        if (addHistory) {
-            historyIndex++;
-            history = history.subList(0, historyIndex);
-            history.add(moves);
-        }
-    }
-
     @Synchronized
     private void update() {
+        disable.set(true);
         if (exploding) {
             if (view.explode(System.currentTimeMillis() - explodingStart)) {
                 exploding = false;
             }
-        } else if (!rotationModels.isEmpty()) {
-            RotationModel rotationModel = rotationModels.getFirst();
-            if (rotationModel.tick()) {
-                RotationEnum rotation = rotationModel.getRotation();
-                if (rotation != null) {
-                    cube3Model.apply(rotation, false);
+        } else if (!actionModels.isEmpty()) {
+            ActionModel actionModel = actionModels.getFirst();
+            if (actionModel.tick()) {
+                actionModels.removeFirst();
+                if (actionModel instanceof RotationDraggedModel rdm) {
+                    if (rdm.getRotation() != null) {
+                        applyMoves("Mouse", rdm.getRotation().getNotation(), false);
+                        // already applied
+                        if (!actionModels.isEmpty()) {
+                            actionModels.removeFirst();
+                        }
+                    }
                 }
-                rotationModels.removeFirst();
-//                if (rotationModels.isEmpty() && cube3Model.isSolved()) {
-//                    doExplode();
-//                }
                 update();
             }
-        }
-    }
-
-    @Synchronized
-    public void undo() {
-        if (rotationModels.isEmpty() && historyIndex >= 0 && !exploding) {
-            String moves = history.get(historyIndex);
-            historyIndex--;
-            List<RotationEnum> rotationEnums = RotationEnum.parse(moves, null);
-            String reversedMoves = rotationEnums.reversed()
-                    .stream()
-                    .map(RotationEnum::reverse)
-                    .map(RotationEnum::getNotation)
-                    .collect(Collectors.joining(" "));
-            applyMoves(reversedMoves, false, false, 100);
-        }
-    }
-
-    @Synchronized
-    public void redo() {
-        if (rotationModels.isEmpty() && historyIndex + 1 < history.size() && !exploding) {
-            historyIndex++;
-            String moves = history.get(historyIndex);
-            applyMoves(moves, false, false, 100);
+        } else {
+            disable.set(false);
         }
     }
 
@@ -580,19 +655,32 @@ public class RubiksCubeInteract {
     }
 
     private void solvePhase(int toPhase) {
-        if (exploding) {
+        if (disable.get()) {
             return;
         }
         clearRotationModels();
-        String state = cube3Model.getNotation();
-        DummySolverInstance dummySolverInstance = new DummySolverInstance(state);
+        DummySolverInstance dummySolverInstance = new DummySolverInstance(getCurrentMoves());
         dummySolverInstance.solve(toPhase);
-        applyMoves(dummySolverInstance.getMovesNotation(), false, true, 50);
+        List<SolveMoves> solveMoves = dummySolverInstance.getMovesNotation();
+        applySolution(solveMoves);
+    }
+
+    private String getCurrentMoves() {
+        List<Action> rotationEnums = getActions(treeView.getSelectionModel().getSelectedItem());
+        return rotationEnums.stream()
+                .map(Action::getNotation)
+                .collect(Collectors.joining(" "));
+    }
+
+    private void doSolve() {
+        clearRotationModels();
+        List<SolveMoves> solveMoves = dummySolver.solve(getCurrentMoves());
+        applySolution(solveMoves);
     }
 
     @Synchronized
     public void explode() {
-        if (!exploding) {
+        if (!disable.get()) {
             doExplode();
         }
     }
@@ -602,4 +690,131 @@ public class RubiksCubeInteract {
         explodingStart = System.currentTimeMillis();
         exploding = true;
     }
+
+    private void rotateView(double dySinceLast, double dxSinceLast) {
+        view.rotate(dySinceLast, dxSinceLast);
+        xRotationLabel.setText("rotX : " + Math.round(view.getAngleX()));
+        yRotationLabel.setText("rotY : " + Math.round(view.getAngleY()));
+    }
+
+    public void goToStart() {
+        if (treeViewRoot.getChildren().isEmpty()) {
+            return;
+        }
+        select(treeViewRoot.getChildren().getFirst());
+    }
+
+    public void goToEnd() {
+        if (treeViewRoot.getChildren().isEmpty()) {
+            return;
+        }
+        selectLast(treeViewRoot.getChildren().getLast());
+    }
+
+    public void goToGroupPrevious() {
+        if (treeViewRoot.getChildren().isEmpty()) {
+            return;
+        }
+        int curIndex = getCurGroupIndex();
+        if (curIndex > 0) {
+            selectLast(treeViewRoot.getChildren().get(curIndex - 1));
+        } else {
+            select(treeViewRoot.getChildren().get(curIndex));
+        }
+    }
+
+    public void goToGroupNext() {
+        if (treeViewRoot.getChildren().isEmpty()) {
+            return;
+        }
+        int curIndex = getCurGroupIndex();
+        if (curIndex < treeViewRoot.getChildren().size() - 1) {
+            selectLast(treeViewRoot.getChildren().get(curIndex + 1));
+        } else {
+            selectLast(treeViewRoot.getChildren().get(curIndex));
+        }
+    }
+
+    private int getCurGroupIndex() {
+        TreeItem<TreeViewItem> selectedItem = treeView.getSelectionModel().getSelectedItem();
+        TreeItem<TreeViewItem> currentGroup;
+        if (selectedItem.getParent().equals(treeViewRoot)) {
+            currentGroup = selectedItem;
+        } else {
+            currentGroup = selectedItem.getParent();
+        }
+        return treeViewRoot.getChildren().indexOf(currentGroup);
+    }
+
+    public void goToActionPrevious() {
+        if (treeViewRoot.getChildren().isEmpty()) {
+            return;
+        }
+        TreeItem<TreeViewItem> selectedItem = getSelectedItemActionApplied();
+        TreeItem<TreeViewItem> previous = treeViewRoot.getChildren().getFirst();
+        for (TreeItem<TreeViewItem> child : treeViewRoot.getChildren()) {
+            for (TreeItem<TreeViewItem> childChild : child.getChildren()) {
+                if (childChild.equals(selectedItem)) {
+                    select(previous);
+                    return;
+                }
+                previous = childChild;
+            }
+        }
+    }
+
+    public void goToActionNext() {
+        if (treeViewRoot.getChildren().isEmpty()) {
+            return;
+        }
+        TreeItem<TreeViewItem> selectedItem = getSelectedItemActionApplied();
+        boolean setNext = false;
+        for (TreeItem<TreeViewItem> child : treeViewRoot.getChildren()) {
+            if (child.equals(selectedItem)) {
+                setNext = true;
+            }
+            for (TreeItem<TreeViewItem> childChild : child.getChildren()) {
+                if (setNext) {
+                    select(childChild);
+                    return;
+                } else if (childChild.equals(selectedItem)) {
+                    setNext = true;
+                }
+            }
+        }
+    }
+
+    private TreeItem<TreeViewItem> getSelectedItemActionApplied() {
+        TreeItem<TreeViewItem> selectedItem = treeView.getSelectionModel().getSelectedItem();
+        TreeItem<TreeViewItem> result = treeViewRoot.getChildren().getFirst();
+        for (TreeItem<TreeViewItem> child : treeViewRoot.getChildren()) {
+            if (selectedItem.equals(child)) {
+                return result;
+            }
+            for (TreeItem<TreeViewItem> childChild : child.getChildren()) {
+                result = childChild;
+                if (selectedItem.equals(childChild)) {
+                    return result;
+                }
+            }
+        }
+        return result;
+    }
+
+    private void selectLast(TreeItem<TreeViewItem> treeItem) {
+        if (!treeItem.getChildren().isEmpty()) {
+            select(treeItem.getChildren().getLast());
+        } else {
+            select(treeItem);
+        }
+    }
+
+    private void select(TreeItem<TreeViewItem> treeItem) {
+        if (!treeItem.getParent().equals(treeViewRoot)) {
+            treeItem.getParent().setExpanded(true);
+        }
+        treeView.scrollTo(treeView.getRow(treeItem));
+        treeView.getSelectionModel().select(treeItem);
+    }
+
 }

@@ -87,11 +87,19 @@ public class RubiksCubeView {
         return cube3.getAngleY();
     }
 
-    public boolean explode(long elapsed) {
-        return cube3.explode(elapsed);
+    public Rotate getRotateX() {
+        return cube3.getRotateX();
+    }
+
+    public Rotate getRotateY() {
+        return cube3.getRotateY();
     }
 
     public void initExplode() {
         cube3.initExplode();
     }
+    public boolean explode(long elapsed) {
+        return cube3.explode(elapsed);
+    }
+
 }
