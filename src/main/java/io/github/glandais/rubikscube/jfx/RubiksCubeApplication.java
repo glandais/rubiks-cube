@@ -69,10 +69,11 @@ public class RubiksCubeApplication extends Application {
                 new ActionButton(disable, ">>>", "End", rubiksCubeInteract::goToEnd)
         );
 
-        rightPane.add(rubiksCubeInteract.getTreeView(), 0, 0);
-        rightPane.add(treeButtons, 0, 1);
+        rightPane.add(rubiksCubeInteract.getGroupLabel(), 0, 0);
+        rightPane.add(rubiksCubeInteract.getTreeView(), 0, 1);
+        rightPane.add(treeButtons, 0, 2);
 
-        rightPane.add(rightButtons, 1, 0);
+        rightPane.add(rightButtons, 1, 1);
         tbRight.getItems().addAll(rightPane);
         gridPane.add(tbRight, 2, 1);
 
@@ -139,7 +140,7 @@ public class RubiksCubeApplication extends Application {
         gridPane.add(reset, 6, 0);
         Button scramble = new ActionButton(null, "Scramble", "Randomize cube", RubiksCubeApplication.rubiksCubeInteract::scramble);
         gridPane.add(scramble, 6, 1);
-        Button solveDummy = new ActionButton(disable, "Solve", "Solve cube", RubiksCubeApplication.rubiksCubeInteract::solveDummy);
+        Button solveDummy = new ActionButton(disable, "Solve", "Solve cube", RubiksCubeApplication.rubiksCubeInteract::solvePhase7);
         gridPane.add(solveDummy, 6, 2);
         Button explode = new ActionButton(disable, "Explode", "Explode cube", RubiksCubeApplication.rubiksCubeInteract::explode);
         gridPane.add(explode, 7, 0);

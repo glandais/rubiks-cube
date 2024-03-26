@@ -17,9 +17,9 @@ import io.github.glandais.rubikscube.jfx.scene.ViewModel;
 import io.github.glandais.rubikscube.model.Action;
 import io.github.glandais.rubikscube.model.SideEnum;
 import io.github.glandais.rubikscube.model.rotation.RotationEnum;
+import io.github.glandais.rubikscube.model.rotation.RotationModifierEnum;
 import io.github.glandais.rubikscube.model.view.CubeVisibleOrientation;
 import io.github.glandais.rubikscube.model.view.ViewEnum;
-import io.github.glandais.rubikscube.solver.DummySolver;
 import io.github.glandais.rubikscube.solver.DummySolverInstance;
 import io.github.glandais.rubikscube.solver.Scrambler;
 import io.github.glandais.rubikscube.solver.SolveMoves;
@@ -46,7 +46,6 @@ import javafx.util.Duration;
 import lombok.Getter;
 import lombok.Synchronized;
 
-import javax.swing.text.View;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +75,6 @@ import static javafx.scene.transform.Rotate.Y_AXIS;
 import static javafx.scene.transform.Rotate.Z_AXIS;
 
 public class RubiksCubeInteract {
-    private final DummySolver dummySolver = new DummySolver();
 
     private final List<ActionModel> actionModels = new ArrayList<>();
     private RubiksCubeView view;
@@ -84,6 +82,8 @@ public class RubiksCubeInteract {
     private Label xRotationLabel;
     @Getter
     private Label yRotationLabel;
+    @Getter
+    private Label groupLabel;
     @Getter
     private TreeView<TreeViewItem> treeView;
     private TreeItem<TreeViewItem> treeViewRoot;
@@ -109,6 +109,7 @@ public class RubiksCubeInteract {
         yRotationLabel = new Label();
         treeViewRoot = new TreeItem<>(null);
         treeViewRoot.setExpanded(true);
+        groupLabel = new Label("");
         treeView = new TreeView<>(treeViewRoot);
         treeView.setShowRoot(false);
         treeView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
@@ -122,6 +123,13 @@ public class RubiksCubeInteract {
 
     @Synchronized
     protected void nodeSelected(TreeItem<TreeViewItem> oldValue, TreeItem<TreeViewItem> newValue) {
+        if (newValue != null) {
+            if (newValue.getParent().equals(treeViewRoot)) {
+                groupLabel.setText(newValue.getValue().toString());
+            } else {
+                groupLabel.setText(newValue.getParent().getValue().toString());
+            }
+        }
         List<Action> rotationEnums = getActions(newValue);
         ViewEnum lastRotation = null;
         for (Action rotationEnum : rotationEnums) {
@@ -461,7 +469,6 @@ public class RubiksCubeInteract {
         disable.set(false);
         view.reset();
         treeViewRoot.getChildren().clear();
-        applyMoves(List.of(new Moves("Init", List.of())));
         exploding = false;
     }
 
@@ -477,26 +484,11 @@ public class RubiksCubeInteract {
         doScramble();
     }
 
-    @Synchronized
-    public void solveDummy() {
-        if (disable.get()) {
-            return;
-        }
-        doSolve();
-    }
-
     private void doScramble() {
         reset();
         String moves = "fru " + Scrambler.scramble();
         System.out.println("Scramble : " + moves);
         applyMoves("Scramble", moves, false);
-    }
-
-    private void applySolution(List<SolveMoves> solveMoves) {
-        List<Moves> moves = solveMoves.stream()
-                .map(s -> new Moves(s.getPhase(), Action.parse(s.getMoves().toString(), null)))
-                .toList();
-        applyMoves(moves);
     }
 
     @Synchronized
@@ -506,11 +498,11 @@ public class RubiksCubeInteract {
             cubeVisibleOrientation = getCubeVisibleOrientation();
         }
         List<Action> actions = Action.parse(moves, cubeVisibleOrientation);
-        applyMoves(List.of(new Moves(desc, actions)));
+        applyMoves(List.of(new Moves(desc, actions)), true);
     }
 
     @Synchronized
-    public void applyMoves(List<Moves> movesList) {
+    public void applyMoves(List<Moves> movesList, boolean select) {
         if (movesList.isEmpty()) {
             return;
         }
@@ -541,8 +533,18 @@ public class RubiksCubeInteract {
 
         for (Moves moves : movesList) {
             List<Action> actions = moves.actions();
-            if (!actions.isEmpty()) {
-                TreeItem<TreeViewItem> moveGroup = new TreeItem<>(new TreeViewMoves(moves.desc(), List.of()));
+            actions = simplify(actions);
+            boolean oneMove = false;
+            for (Action action : actions) {
+                if (action instanceof RotationEnum) {
+                    oneMove = true;
+                    break;
+                }
+            }
+            if (oneMove) {
+                TreeViewMoves treeViewMoves = new TreeViewMoves(moves.desc());
+                TreeItem<TreeViewItem> moveGroup = new TreeItem<>(treeViewMoves);
+                treeViewMoves.setTreeItem(moveGroup);
                 moveGroup.setExpanded(true);
                 for (Action action : actions) {
                     TreeItem<TreeViewItem> move = new TreeItem<>(new TreeViewMove(action));
@@ -553,10 +555,64 @@ public class RubiksCubeInteract {
             }
         }
 
-        if (last != null) {
+        if (select && last != null) {
             treeView.scrollTo(treeView.getRow(last));
             treeView.getSelectionModel().select(last);
         }
+    }
+
+    private List<Action> simplify(List<Action> actions) {
+        boolean modified = true;
+        while (modified) {
+            List<Action> newActions = new ArrayList<>();
+            for (int i = 0; i < actions.size(); i++) {
+                Action action = actions.get(i);
+                boolean add = true;
+                if (i != actions.size() - 1) {
+                    Action next = actions.get(i + 1);
+                    if (action instanceof ViewEnum && next instanceof ViewEnum) {
+                        add = false;
+                    } else if (action instanceof RotationEnum r1 && next instanceof RotationEnum r2) {
+                        if (r1.getSide() == r2.getSide()) {
+                            add = false;
+                            RotationModifierEnum modifier = switch (r1.getModifier()) {
+                                case NORMAL -> switch (r2.getModifier()) {
+                                    case NORMAL -> RotationModifierEnum.DOUBLE;
+                                    case REVERSE -> null;
+                                    case DOUBLE -> RotationModifierEnum.REVERSE;
+                                };
+                                case REVERSE -> switch (r2.getModifier()) {
+                                    case NORMAL -> null;
+                                    case REVERSE -> RotationModifierEnum.DOUBLE;
+                                    case DOUBLE -> RotationModifierEnum.NORMAL;
+                                };
+                                case DOUBLE -> switch (r2.getModifier()) {
+                                    case NORMAL -> RotationModifierEnum.REVERSE;
+                                    case REVERSE -> RotationModifierEnum.NORMAL;
+                                    case DOUBLE -> null;
+                                };
+                            };
+                            if (modifier != null) {
+                                RotationEnum rotationEnum = RotationEnum.getRotationEnum(r1.getSide(), modifier);
+                                newActions.add(rotationEnum);
+                            }
+                            i++;
+                        }
+                    }
+                }
+                if (add) {
+                    newActions.add(action);
+                }
+            }
+
+            if (newActions.size() != actions.size()) {
+                modified = true;
+            } else {
+                modified = false;
+            }
+            actions = newActions;
+        }
+        return actions;
     }
 
     private CubeVisibleOrientation getCubeVisibleOrientation() {
@@ -665,17 +721,23 @@ public class RubiksCubeInteract {
         applySolution(solveMoves);
     }
 
+    private void applySolution(List<SolveMoves> solveMoves) {
+        List<Moves> moves = solveMoves.stream()
+                .map(s -> new Moves(s.getPhase(), Action.parse(s.getMoves().toString(), null)))
+                .toList();
+        applyMoves(moves, false);
+        TreeItem<TreeViewItem> selectedItem = treeView.getSelectionModel().getSelectedItem();
+        int curGroupIndex = getCurGroupIndex();
+        if (curGroupIndex < treeViewRoot.getChildren().size() - 1) {
+            select(treeViewRoot.getChildren().get(curGroupIndex + 1));
+        }
+    }
+
     private String getCurrentMoves() {
         List<Action> rotationEnums = getActions(treeView.getSelectionModel().getSelectedItem());
         return rotationEnums.stream()
                 .map(Action::getNotation)
                 .collect(Collectors.joining(" "));
-    }
-
-    private void doSolve() {
-        clearRotationModels();
-        List<SolveMoves> solveMoves = dummySolver.solve(getCurrentMoves());
-        applySolution(solveMoves);
     }
 
     @Synchronized

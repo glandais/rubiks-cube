@@ -62,7 +62,7 @@ public enum RotationEnum implements Action {
         return getRotationEnum(mappedSide, rotation.getModifier());
     }
 
-    private static RotationEnum getRotationEnum(SideEnum side, RotationModifierEnum modifier) {
+    public static RotationEnum getRotationEnum(SideEnum side, RotationModifierEnum modifier) {
         for (RotationEnum rotationEnum : values()) {
             if (rotationEnum.side == side &&
                 rotationEnum.modifier == modifier) {
