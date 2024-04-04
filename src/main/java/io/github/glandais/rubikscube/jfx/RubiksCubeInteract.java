@@ -285,7 +285,7 @@ public class RubiksCubeInteract {
         if (disable.get()) {
             return;
         }
-        applyMoves("Keyboard", rotation.getNotation(), true);
+        applyMoves("Keyboard", rotation.getNotation(), true, true);
     }
 
     @Synchronized
@@ -488,21 +488,21 @@ public class RubiksCubeInteract {
         reset();
         String moves = "fru " + Scrambler.scramble();
         System.out.println("Scramble : " + moves);
-        applyMoves("Scramble", moves, false);
+        applyMoves("Scramble", moves, false, true);
     }
 
     @Synchronized
-    public void applyMoves(String desc, String moves, boolean fromView) {
+    public void applyMoves(String desc, String moves, boolean fromView, boolean forceApply) {
         CubeVisibleOrientation cubeVisibleOrientation = null;
         if (fromView) {
             cubeVisibleOrientation = getCubeVisibleOrientation();
         }
         List<Action> actions = Action.parse(moves, cubeVisibleOrientation);
-        applyMoves(List.of(new Moves(desc, actions)), true);
+        applyMoves(List.of(new Moves(desc, actions)), true, forceApply);
     }
 
     @Synchronized
-    public void applyMoves(List<Moves> movesList, boolean select) {
+    public void applyMoves(List<Moves> movesList, boolean select, boolean forceApply) {
         if (movesList.isEmpty()) {
             return;
         }
@@ -533,7 +533,6 @@ public class RubiksCubeInteract {
 
         for (Moves moves : movesList) {
             List<Action> actions = moves.actions();
-            actions = simplify(actions);
             boolean oneMove = false;
             for (Action action : actions) {
                 if (action instanceof RotationEnum) {
@@ -541,7 +540,7 @@ public class RubiksCubeInteract {
                     break;
                 }
             }
-            if (oneMove) {
+            if (forceApply || oneMove) {
                 TreeViewMoves treeViewMoves = new TreeViewMoves(moves.desc());
                 TreeItem<TreeViewItem> moveGroup = new TreeItem<>(treeViewMoves);
                 treeViewMoves.setTreeItem(moveGroup);
@@ -559,60 +558,6 @@ public class RubiksCubeInteract {
             treeView.scrollTo(treeView.getRow(last));
             treeView.getSelectionModel().select(last);
         }
-    }
-
-    private List<Action> simplify(List<Action> actions) {
-        boolean modified = true;
-        while (modified) {
-            List<Action> newActions = new ArrayList<>();
-            for (int i = 0; i < actions.size(); i++) {
-                Action action = actions.get(i);
-                boolean add = true;
-                if (i != actions.size() - 1) {
-                    Action next = actions.get(i + 1);
-                    if (action instanceof ViewEnum && next instanceof ViewEnum) {
-                        add = false;
-                    } else if (action instanceof RotationEnum r1 && next instanceof RotationEnum r2) {
-                        if (r1.getSide() == r2.getSide()) {
-                            add = false;
-                            RotationModifierEnum modifier = switch (r1.getModifier()) {
-                                case NORMAL -> switch (r2.getModifier()) {
-                                    case NORMAL -> RotationModifierEnum.DOUBLE;
-                                    case REVERSE -> null;
-                                    case DOUBLE -> RotationModifierEnum.REVERSE;
-                                };
-                                case REVERSE -> switch (r2.getModifier()) {
-                                    case NORMAL -> null;
-                                    case REVERSE -> RotationModifierEnum.DOUBLE;
-                                    case DOUBLE -> RotationModifierEnum.NORMAL;
-                                };
-                                case DOUBLE -> switch (r2.getModifier()) {
-                                    case NORMAL -> RotationModifierEnum.REVERSE;
-                                    case REVERSE -> RotationModifierEnum.NORMAL;
-                                    case DOUBLE -> null;
-                                };
-                            };
-                            if (modifier != null) {
-                                RotationEnum rotationEnum = RotationEnum.getRotationEnum(r1.getSide(), modifier);
-                                newActions.add(rotationEnum);
-                            }
-                            i++;
-                        }
-                    }
-                }
-                if (add) {
-                    newActions.add(action);
-                }
-            }
-
-            if (newActions.size() != actions.size()) {
-                modified = true;
-            } else {
-                modified = false;
-            }
-            actions = newActions;
-        }
-        return actions;
     }
 
     private CubeVisibleOrientation getCubeVisibleOrientation() {
@@ -661,7 +606,7 @@ public class RubiksCubeInteract {
                 actionModels.removeFirst();
                 if (actionModel instanceof RotationDraggedModel rdm) {
                     if (rdm.getRotation() != null) {
-                        applyMoves("Mouse", rdm.getRotation().getNotation(), false);
+                        applyMoves("Mouse", rdm.getRotation().getNotation(), false, true);
                         // already applied
                         if (!actionModels.isEmpty()) {
                             actionModels.removeFirst();
@@ -725,7 +670,7 @@ public class RubiksCubeInteract {
         List<Moves> moves = solveMoves.stream()
                 .map(s -> new Moves(s.getPhase(), Action.parse(s.getMoves().toString(), null)))
                 .toList();
-        applyMoves(moves, false);
+        applyMoves(moves, false, false);
         int curGroupIndex = getCurGroupIndex();
         if (curGroupIndex < treeViewRoot.getChildren().size() - 1) {
             select(treeViewRoot.getChildren().get(curGroupIndex + 1));

@@ -4,12 +4,17 @@ import io.github.glandais.rubikscube.model.FaceletEnum;
 import io.github.glandais.rubikscube.model.SideEnum;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
+import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import lombok.Getter;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Getter
 public class Facelet extends Group {
@@ -21,7 +26,10 @@ public class Facelet extends Group {
 
     private FaceletEnum initialPosition;
     private FaceletEnum currentPosition;
+    private Point3D initialPosition3D;
     private Point3D currentPosition3D;
+
+    private static Map<Point3D, Image> textures = new HashMap<>();
 
     public Facelet(Cube cube, SideEnum sideEnum) {
         super();
@@ -64,27 +72,46 @@ public class Facelet extends Group {
             translate = new Translate(0, 0, 2 * dc);
         }
         face.getTransforms().add(translate);
-        PhongMaterial material = new PhongMaterial();
-        Color color = switch (faceletType) {
-            case PLAYABLE -> sideEnum.getColor();
-            case NOT_PLAYABLE -> HIDDEN_FACE;
-            case BORDER -> BORDER;
-        };
-        material.setDiffuseColor(color);
-        material.setSpecularColor(SPECULAR_COLOR);
-        face.setMaterial(material);
 
-        this.currentPosition3D = new Point3D(
+        this.initialPosition3D = new Point3D(
                 cube.getX() + translate.getX(),
                 cube.getY() + translate.getY(),
                 cube.getZ() + translate.getZ()
         );
+        this.currentPosition3D = this.initialPosition3D;
         Facelet3DEnum facelet3DEnum = Facelet3DEnum.of(this.currentPosition3D);
         if (facelet3DEnum != null) {
             this.initialPosition = facelet3DEnum.getFaceletEnum();
             this.currentPosition = this.initialPosition;
         }
+
+        PhongMaterial material = new PhongMaterial();
+        switch (faceletType) {
+            case PLAYABLE -> getSetDiffuse(material);
+            case NOT_PLAYABLE -> material.setDiffuseColor(HIDDEN_FACE);
+            case BORDER -> material.setDiffuseColor(BORDER);
+        }
+        material.setSpecularColor(SPECULAR_COLOR);
+        face.setMaterial(material);
+
         getChildren().add(face);
+    }
+
+    private void getSetDiffuse(PhongMaterial material) {
+        Image image = textures.computeIfAbsent(this.initialPosition3D, this::getTexture);
+        if (image != null) {
+            material.setDiffuseMap(image);
+        } else {
+            material.setDiffuseColor(sideEnum.getColor());
+        }
+    }
+
+    private Image getTexture(Point3D p) {
+        Facelet3DEnum facelet3DEnum = Facelet3DEnum.of(p);
+        if (facelet3DEnum == null) {
+            return null;
+        }
+        return new Image("/textures/" + facelet3DEnum.name() + ".png", true);
     }
 
     public void rotate(Rotate rotate) {

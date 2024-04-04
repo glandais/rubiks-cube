@@ -5,7 +5,7 @@
     <option name="PROGRAM_PARAMETERS" value="play" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="io.github.glandais.rubikscube.*" />
+        <option name="PATTERN" value="io.github.glandais.rubikscube.jfx.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>

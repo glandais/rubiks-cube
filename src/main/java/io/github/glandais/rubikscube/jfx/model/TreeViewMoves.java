@@ -1,9 +1,6 @@
 package io.github.glandais.rubikscube.jfx.model;
 
-import io.github.glandais.rubikscube.model.Action;
-import io.github.glandais.rubikscube.model.rotation.RotationEnum;
 import javafx.scene.control.TreeItem;
-import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
@@ -20,7 +17,14 @@ public class TreeViewMoves extends TreeViewItem {
 
     @Override
     public String toString() {
-        return desc + " (" + treeItem.getChildren().size() + " moves)";
+        return desc + " (" + getMoveSize() + " moves)";
     }
 
+    @Override
+    protected long getMoveSize() {
+        return super.getMoveSize() + treeItem.getChildren()
+                .stream()
+                .mapToLong(t -> t.getValue().getMoveSize())
+                .sum();
+    }
 }

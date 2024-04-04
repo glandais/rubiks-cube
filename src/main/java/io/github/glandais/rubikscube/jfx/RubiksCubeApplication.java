@@ -23,8 +23,8 @@ import java.util.List;
 public class RubiksCubeApplication extends Application {
     public static RubiksCubeInteract rubiksCubeInteract;
 
-    public static void launchFromElseWhere(RubiksCubeInteract rubiksCubeInteract) {
-        RubiksCubeApplication.rubiksCubeInteract = rubiksCubeInteract;
+    public static void launchFromElseWhere() {
+        RubiksCubeApplication.rubiksCubeInteract = new RubiksCubeInteract();
         launch();
     }
 
@@ -60,14 +60,7 @@ public class RubiksCubeApplication extends Application {
         rightButtons.getChildren().addAll(getRight(disable));
 
         HBox treeButtons = new HBox();
-        treeButtons.getChildren().addAll(
-                new ActionButton(disable, "<<<", "Start", rubiksCubeInteract::goToStart),
-                new ActionButton(disable, "<<", "Previous group", rubiksCubeInteract::goToGroupPrevious),
-                new ActionButton(disable, "<", "Previous", rubiksCubeInteract::goToActionPrevious),
-                new ActionButton(disable, ">", "Next", rubiksCubeInteract::goToActionNext),
-                new ActionButton(disable, ">>", "Next group", rubiksCubeInteract::goToGroupNext),
-                new ActionButton(disable, ">>>", "End", rubiksCubeInteract::goToEnd)
-        );
+        treeButtons.getChildren().addAll(getTreeButtons(disable));
 
         rightPane.add(rubiksCubeInteract.getGroupLabel(), 0, 0);
         rightPane.add(rubiksCubeInteract.getTreeView(), 0, 1);
@@ -82,6 +75,7 @@ public class RubiksCubeApplication extends Application {
         front.setOnMouseDragged(RubiksCubeApplication.rubiksCubeInteract::onMouseDragged);
         front.setOnMouseReleased(RubiksCubeApplication.rubiksCubeInteract::onMouseReleased);
         front.setOnScroll(RubiksCubeApplication.rubiksCubeInteract::onScroll);
+
         gridPane.add(front, 1, 1);
         bindSize(front, gridPane, tbLeft, tbRight, tbTop, tbBottom);
 
@@ -95,6 +89,17 @@ public class RubiksCubeApplication extends Application {
         primaryStage.show();
 
         rubiksCubeInteract.start();
+    }
+
+    private List<ActionButton> getTreeButtons(BooleanProperty disable) {
+        return List.of(
+                new ActionButton(disable, "<<<", "Start", rubiksCubeInteract::goToStart),
+                new ActionButton(disable, "<<", "Previous group", rubiksCubeInteract::goToGroupPrevious),
+                new ActionButton(disable, "<", "Previous", rubiksCubeInteract::goToActionPrevious),
+                new ActionButton(disable, ">", "Next", rubiksCubeInteract::goToActionNext),
+                new ActionButton(disable, ">>", "Next group", rubiksCubeInteract::goToGroupNext),
+                new ActionButton(disable, ">>>", "End", rubiksCubeInteract::goToEnd)
+        );
     }
 
     private void bindSize(SubScene view, GridPane gridPane, ToolBar tbLeft, ToolBar tbRight, ToolBar tbTop, ToolBar tbBottom) {
@@ -133,7 +138,7 @@ public class RubiksCubeApplication extends Application {
 
         Button undo = new ActionButton(disable, "Undo", "Undo last action group", RubiksCubeApplication.rubiksCubeInteract::goToGroupPrevious);
         gridPane.add(undo, 5, 0);
-        Button redo = new ActionButton(disable,"Redo", "Redo last action group", RubiksCubeApplication.rubiksCubeInteract::goToGroupNext);
+        Button redo = new ActionButton(disable, "Redo", "Redo last action group", RubiksCubeApplication.rubiksCubeInteract::goToGroupNext);
         gridPane.add(redo, 5, 1);
 
         Button reset = new ActionButton(null, "Reset", "Reset to a solved cube", RubiksCubeApplication.rubiksCubeInteract::reset);

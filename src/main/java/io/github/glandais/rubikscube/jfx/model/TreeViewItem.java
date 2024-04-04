@@ -39,4 +39,11 @@ public abstract class TreeViewItem {
     public int hashCode() {
         return (int) (i ^ (i >>> 32));
     }
+
+    protected long getMoveSize() {
+        return getActions()
+                .stream().filter(a -> a instanceof RotationEnum)
+                .count();
+    }
+
 }

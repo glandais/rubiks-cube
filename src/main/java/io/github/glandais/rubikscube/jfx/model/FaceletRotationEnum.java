@@ -186,15 +186,6 @@ public class FaceletRotationEnum {
         }
     }
 
-    private static FaceletDirectionEnum inverse(FaceletDirectionEnum faceletDirectionEnum) {
-        return switch (faceletDirectionEnum) {
-            case UP -> DOWN;
-            case DOWN -> UP;
-            case LEFT -> RIGHT;
-            case RIGHT -> LEFT;
-        };
-    }
-
     private static RotationEnum inverse(RotationEnum rotationEnum) {
         return switch (rotationEnum) {
             case F -> F_REVERSE;
