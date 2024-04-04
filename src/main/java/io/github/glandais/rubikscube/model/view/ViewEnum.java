@@ -39,4 +39,9 @@ public enum ViewEnum implements Action {
     public Action reverse() {
         return this;
     }
+
+    @Override
+    public String toString() {
+        return getNotation();
+    }
 }

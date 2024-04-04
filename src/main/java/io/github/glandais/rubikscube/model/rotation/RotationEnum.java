@@ -90,4 +90,8 @@ public enum RotationEnum implements Action {
         throw new IllegalStateException("No inverse for " + this);
     }
 
+    @Override
+    public String toString() {
+        return getNotation();
+    }
 }

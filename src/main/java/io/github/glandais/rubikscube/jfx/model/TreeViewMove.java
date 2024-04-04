@@ -11,6 +11,6 @@ public class TreeViewMove extends TreeViewItem {
 
     @Override
     public String toString() {
-        return actions.getFirst().getNotation();
+        return actions.getFirst().toString();
     }
 }

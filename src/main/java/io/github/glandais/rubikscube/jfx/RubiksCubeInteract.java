@@ -130,16 +130,16 @@ public class RubiksCubeInteract {
                 groupLabel.setText(newValue.getParent().getValue().toString());
             }
         }
-        List<Action> rotationEnums = getActions(newValue);
+        List<Action> newActions = getActions(newValue);
         ViewEnum lastRotation = null;
-        for (Action rotationEnum : rotationEnums) {
-            if (rotationEnum instanceof ViewEnum viewEnum) {
+        for (Action action : newActions) {
+            if (action instanceof ViewEnum viewEnum) {
                 lastRotation = viewEnum;
             }
         }
-        List<Action> cubeMoves = getActions(oldValue);
-        if (cubeMoves.size() > rotationEnums.size()) {
-            List<Action> subList = cubeMoves.subList(rotationEnums.size(), cubeMoves.size());
+        List<Action> oldActions = getActions(oldValue);
+        if (oldActions.size() > newActions.size()) {
+            List<Action> subList = oldActions.subList(newActions.size(), oldActions.size());
             String moves = subList
                     .reversed()
                     .stream()
@@ -148,8 +148,8 @@ public class RubiksCubeInteract {
                     .map(Action::getNotation)
                     .collect(Collectors.joining(" "));
             applyNodeSelectedMoves(lastRotation, moves);
-        } else if (cubeMoves.size() < rotationEnums.size()) {
-            List<Action> subList = rotationEnums.subList(cubeMoves.size(), rotationEnums.size());
+        } else if (oldActions.size() < newActions.size()) {
+            List<Action> subList = newActions.subList(oldActions.size(), newActions.size());
             String moves = subList
                     .stream()
                     .map(Action::getNotation)
@@ -181,20 +181,20 @@ public class RubiksCubeInteract {
         if (treeItem == null) {
             return List.of();
         }
-        List<Action> rotationEnums = new ArrayList<>();
+        List<Action> actions = new ArrayList<>();
         for (TreeItem<TreeViewItem> child : treeViewRoot.getChildren()) {
             if (child.equals(treeItem)) {
-                rotationEnums.addAll(child.getValue().getActions());
-                return rotationEnums;
+                actions.addAll(child.getValue().getActions());
+                return actions;
             }
             for (TreeItem<TreeViewItem> childChild : child.getChildren()) {
-                rotationEnums.addAll(childChild.getValue().getActions());
+                actions.addAll(childChild.getValue().getActions());
                 if (childChild.equals(treeItem)) {
-                    return rotationEnums;
+                    return actions;
                 }
             }
         }
-        return rotationEnums;
+        return actions;
     }
 
     @Synchronized
@@ -726,7 +726,6 @@ public class RubiksCubeInteract {
                 .map(s -> new Moves(s.getPhase(), Action.parse(s.getMoves().toString(), null)))
                 .toList();
         applyMoves(moves, false);
-        TreeItem<TreeViewItem> selectedItem = treeView.getSelectionModel().getSelectedItem();
         int curGroupIndex = getCurGroupIndex();
         if (curGroupIndex < treeViewRoot.getChildren().size() - 1) {
             select(treeViewRoot.getChildren().get(curGroupIndex + 1));
@@ -734,8 +733,8 @@ public class RubiksCubeInteract {
     }
 
     private String getCurrentMoves() {
-        List<Action> rotationEnums = getActions(treeView.getSelectionModel().getSelectedItem());
-        return rotationEnums.stream()
+        List<Action> actions = getActions(treeView.getSelectionModel().getSelectedItem());
+        return actions.stream()
                 .map(Action::getNotation)
                 .collect(Collectors.joining(" "));
     }
